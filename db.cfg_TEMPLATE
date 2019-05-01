@@ -1,0 +1,64 @@
+email { 
+  server = "localhost"
+  to = "<emailaddress>"
+  from = "<emailaddress>"
+}
+
+# passthru authentication but you can specify a uid/pwd: will need to change the drivers as well
+msW {
+  driver = "Driver={SQL Server Native Client 11.0}"
+  server = "localhost"
+  db = "test"
+  # uid = "??"
+  # pwd = "??"
+}
+
+msR {
+  driver = "Driver={SQL Server Native Client 11.0}"
+  server = "localhost"
+  db = "test"
+}
+
+msa {
+  driver = "Driver={SQL Server Native Client 11.0}"
+  server = "localhost"
+  db = "test"
+}
+
+pgW {
+  driver = "DRIVER={PostgreSQL ODBC Driver(ANSI)}"
+  server = "localhost"
+  uid = "postgres"
+  pwd = "????"
+  db = "postgres"
+}
+
+orW {
+  driver = "Driver= {Oracle in XE}"
+  tnsname = "XE"
+  uid = "????"
+  pwd = "???"
+  db = "????"
+}
+
+sqlite1 {
+  driver = "DRIVER={SQLite3 ODBC Driver};Timeout=10000;NoTxn=1" 
+  # schema = ""
+  fn = "<fname>"
+}  
+
+myW {
+  driver = "DRIVER={MySQL ODBC 8.0 ANSI Driver}"
+  server = "localhost"
+  uid = "???"
+  pwd = "???"
+  db = "??"
+}
+
+myW1 {
+  driver = "DRIVER={MySQL ODBC 8.0 ANSI Driver}"
+  server = "localhost"
+  uid = "???"
+  pwd = "???"
+  db = "???"
+}

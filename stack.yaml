@@ -1,0 +1,29 @@
+# double-conversion is used by formatting and text-format
+flags: {}
+extra-package-dbs: []
+packages:
+- location: '.'
+- location: ../hdbc-odbc
+  extra-dep: true
+- location: ../hdbc
+  extra-dep: true
+- location: ../table-layout
+  extra-dep: true
+- location: ../sqlhandler
+  extra-dep: true
+- location: ../predicate
+  extra-dep: true
+- location: ../typelevel
+  extra-dep: true
+- location: ../easytest
+  extra-dep: true
+extra-deps: 
+- vinyl-0.11.0
+- pretty-terminal-0.1.0.0
+- pretty-tree-0.1.0.0
+- tree-view-0.5
+- Frames-0.6.1
+- generic-lens-1.1.0.0
+- symbols-0.2.0.1
+arch: x86_64
+resolver: lts-12.11

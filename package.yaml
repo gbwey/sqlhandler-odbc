@@ -1,0 +1,76 @@
+name: sqlhandler-odbc
+version: '0.1.0.0'
+author: Grant Weyburne
+maintainer: gbwey9@gmail.com
+license: BSD3
+dependencies:
+- unordered-containers
+- bytestring
+- clock
+- configurator
+- containers
+- directory
+- extra
+- fast-logger
+- filepath
+- foldl
+- formatting
+- Frames
+- generics-sop
+- ghc-prim
+- HDBC == 2.4.0.3
+- HDBC-odbc ==2.5.0.2
+- iso8601-time
+- lens
+- lens-datetime
+- mime-mail
+- monad-logger
+- mtl
+- predicate
+- regex-applicative
+- resourcet
+- semigroups
+- shakespeare
+- smtp-mail
+- split
+- sqlhandler
+- tagged
+- template-haskell
+- text
+- these
+- time
+- transformers
+- typelevel
+- unliftio
+- unliftio-core
+- uuid
+- vinyl >= 0.10.0.0
+- generic-lens
+default-extensions: []
+library:
+  source-dirs: src
+  ghc-options:
+  - -Wall
+  - -Wcompat
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wredundant-constraints
+  other-modules: []
+  dependencies:
+  - base >=4.7 && <=5.1
+
+tests:
+  spec:
+    main: "Spec.hs"
+    ghc-options: "-threaded -O0"
+    source-dirs:
+      - test
+    dependencies:
+      - base
+      - sqlhandler-odbc
+      - hspec 
+      - QuickCheck
+      - easytest
+
+data-files: 
+- db.cfg
