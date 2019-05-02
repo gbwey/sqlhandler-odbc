@@ -12,19 +12,13 @@
 module TestOracle_TH where
 import DBConn
 import GConn
-import SqlUtils_TH
 import Sql_TH
 import DBOracle
 import Sql
 import Util
-import Control.Monad.IO.Class
 import Text.Shakespeare.Text
-import Data.Text (Text)
-import qualified Data.Text as T
 import Data.Vinyl
 import TablePrinter
-import Data.Time
-import Control.Lens
 import TestConnections
 
 $(genSql "myfn13" orW (\f -> [st|select * from Agents where 1=1 and #{f "rownum < 5"} |]))

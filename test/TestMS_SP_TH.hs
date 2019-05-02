@@ -11,24 +11,14 @@
 module TestMS_SP_TH where
 import DBConn
 import GConn
-import DBPG
-import SqlUtils_TH
 import Sql_TH
 import DBMSSQL
-import DBSqlite
-import DBOracle
-import DBFrame
 import Sql
 import Util
-import Control.Monad.IO.Class
 import Text.Shakespeare.Text
-import Data.Text (Text)
-import qualified Data.Text as T
-import Data.Vinyl
 import TablePrinter
-import Data.Time
-import Control.Lens
 import TestConnections
+import Data.Vinyl
 import Language.Haskell.TH.Syntax (mkName)
 
 $(genMSType "FnA" msW (const "select count(*), 'abc' as field2 from orders"))
@@ -39,15 +29,6 @@ $(genMSType "FnB" msW (\f -> [st|select count(*), 'abc' as field2 from orders wh
 myfn1a :: Sql (DBMS Writeable) '[String,Int] '[SelOne FnB]
 myfn1a = mkSql' "select count(*), 'abc' as field2 from orders"
 
--- $(getMSTypeOLDSimple "Fn1" msW "select count(*), 'abc' as field2 from orders")
-
--- $(genMSSimple "myfn" msW "select top 10 * from orders")
-
--- yurk! way too much crap
--- $(getMSTypeOLD'' "Fn0" msW ''Writeable ''SelOne [t| '[String,Int] |] (const "select count(*), 'abc' as field2 from orders"))
-
-
-
 $(genMSWith defGenOpts { _goDBParam = mkName "a", _goSel = ''Sel, _goEnc = [t| '[] |] } "myfn99" msW (const "select top 10 * from orders"))
 
 $(genMSWith defGenOpts { _goSel = ''SelOne } "myfn1bad" msW (const "select 1 as ff,'dude' as astring,cast (123.4 as float),567.8,567.8z"))
@@ -56,7 +37,6 @@ $(genMSWith defGenOpts { _goSel = ''SelOne, _goDBParam = ''Writeable } "myfn2bad
 $(genMSWith defGenOpts { _goSel = ''SelOne } "myfn1" msW (const "select 1 as ff,'dude' as astring,cast (123.4 as float),567.8e,567.8e"))
 $(genMSWith defGenOpts { _goSel = ''SelOne, _goDBParam = ''Writeable } "myfn2" msW (const "select 1 as ff,'dude' as astring,cast (123.4 as float),567.8e"))
 
--- dont have describe first resultset on work machine cos sqlserver express is too old
 $(genMSWith defGenOpts { _goDBParam = ''Writeable } "myfn4" msW (const [st|
   select top 10 o.ord_num,o.ord_amount, c.cust_name, a.agent_name, a.commission
   from agents a, orders o, customers c
@@ -100,7 +80,7 @@ $(genMSWith defGenOpts { _goSel = ''SelOne } "myfn6d" msW (const [st|
   select 'abc' as XYZ, 'def' as [    @$  aA], 'ghi', 'jkl' as XYZ, 'mno' as field1
   |]))
 
--- cool treats bit as bool but is Maybe cos looks like numbers are treated not null by default but strings seem fine
+-- ms treats bit as bool but is Maybe cos looks like numbers are treated not null by default but strings seem fine
 $(genMSWith defGenOpts { _goSel = ''SelOne } "myfn6e" msW (const [st|
   select cast(0 as bit),cast (1 as bit),2,3
   |]))

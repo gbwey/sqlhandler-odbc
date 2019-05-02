@@ -14,17 +14,11 @@ import DBConn
 import GConn
 import DBPG
 import Sql_TH
-import DBFrame
 import Sql
 import Util
-import Control.Monad.IO.Class
 import Text.Shakespeare.Text
-import Data.Text (Text)
-import qualified Data.Text as T
 import Data.Vinyl
 import TablePrinter
-import Data.Time
-import Control.Lens
 import TestConnections
 
 $(genSql "myfn9a" pgW (\f -> [st|select * from orders #{f "limit 4"}; select * from agents #{f "limit 3"}|]))

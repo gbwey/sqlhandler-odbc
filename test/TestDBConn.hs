@@ -14,10 +14,8 @@ import DBPG
 import DBMSSQL
 import DBOracle
 import Sql
-import Util
 import Data.Proxy
 import Data.Functor
-import TestConnections
 import EasyTest
 
 suite :: Test ()

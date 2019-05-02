@@ -12,20 +12,13 @@
 module TestMY_TH where
 import DBConn
 import GConn
-import SqlUtils_TH
 import Sql_TH
 import DBMY
-import DBFrame
 import Sql
 import Util
-import Control.Monad.IO.Class
 import Text.Shakespeare.Text
-import Data.Text (Text)
-import qualified Data.Text as T
 import Data.Vinyl
 import TablePrinter
-import Data.Time
-import Control.Lens
 import TestConnections
 
 -- mysql count takes way too long

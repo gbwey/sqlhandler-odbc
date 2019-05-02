@@ -22,7 +22,6 @@ This is very experimental
 module Sql_TH where
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH
---import Language.Haskell.TH.Syntax
 import qualified Language.Haskell.TH.Syntax as TS
 import Control.Monad
 import Data.List

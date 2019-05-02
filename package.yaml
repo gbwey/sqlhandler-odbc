@@ -3,6 +3,33 @@ version: '0.1.0.0'
 author: Grant Weyburne
 maintainer: gbwey9@gmail.com
 license: BSD3
+# stack ghci --test --flag sqlhandler-odbc:my
+flags: 
+  ms:
+    description: run mssql th
+    manual: yes
+    default: no
+  msold:
+    description: run mssql th using an sqlserver pre 2012
+    manual: yes
+    default: no
+  pg:
+    description: run postgres th
+    manual: yes
+    default: no
+  my:
+    description: run mysql th
+    manual: yes
+    default: no
+  oracle:
+    description: run oracle th
+    manual: yes
+    default: no
+  sqlite:
+    description: run sqlite th
+    manual: yes
+    default: no
+    
 dependencies:
 - unordered-containers
 - bytestring
@@ -61,7 +88,7 @@ library:
 
 tests:
   spec:
-    main: "Spec.hs"
+    main: Spec.hs
     ghc-options: "-threaded -O0"
     source-dirs:
       - test
@@ -71,6 +98,94 @@ tests:
       - hspec 
       - QuickCheck
       - easytest
+    other-modules: 
+    - TestDBConn
+    - TestSqlParser
+
+  testms_sp: 
+    main: TestMS_SP_TH.hs
+    source-dirs: test
+    when:
+    - condition: flag(ms) 
+      then:
+        buildable: True
+      else:
+        buildable: False
+    dependencies:
+      - base
+      - sqlhandler-odbc
+    other-modules: TestConnections
+    
+  testms: 
+    main: TestMS_TH.hs
+    source-dirs: test
+    when:
+    - condition: flag(msold) 
+      then:
+        buildable: True
+      else:
+        buildable: False
+    dependencies:
+      - base
+      - sqlhandler-odbc
+    other-modules: TestConnections
+
+  testsqlite: 
+    main: TestSqlite_TH.hs
+    source-dirs: test
+    when:
+    - condition: flag(sqlite) 
+      then:
+        buildable: True
+      else:
+        buildable: False
+    dependencies:
+      - base
+      - sqlhandler-odbc
+    other-modules: TestConnections
+
+  testpg: 
+    main: TestPG_TH.hs
+    source-dirs: test
+    when:
+    - condition: flag(pg) 
+      then:
+        buildable: True
+      else:
+        buildable: False
+    dependencies:
+      - base
+      - sqlhandler-odbc
+    other-modules: TestConnections
+
+  testoracle: 
+    main: TestOracle_TH.hs
+    source-dirs: test
+    when:
+    - condition: flag(oracle) 
+      then:
+        buildable: True
+      else:
+        buildable: False
+    dependencies:
+      - base
+      - sqlhandler-odbc
+    other-modules: TestConnections
+
+  testmy: 
+    main: TestMY_TH.hs
+    source-dirs: test
+    when:
+    - condition: flag(my) 
+      then:
+        buildable: True
+      else:
+        buildable: False
+    dependencies:
+      - base
+      - sqlhandler-odbc
+    other-modules: TestConnections
+
 
 data-files: 
 - db.cfg

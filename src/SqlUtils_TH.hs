@@ -34,7 +34,6 @@ import Util
 import Control.Lens
 import Sql
 import Data.Vinyl
-import Data.Maybe
 import qualified UnliftIO.Exception as UE
 import DBConn
 import DBMSSQL
