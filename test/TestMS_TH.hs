@@ -23,20 +23,20 @@ import TablePrinter
 import TestConnections
 
 -- ms requires exact number of binders: the other dbs can be larger
-$(genTypeFirst 0 "TP5A" msW (\f -> [st|select 14 as dude,'xx' ; select #{f "top 4"} * from orders|]))
+$(genTypeFirst 0 "MSOLD1" msW (\f -> [st|select 14 as dude,'xx' ; select #{f "top 4"} * from orders|]))
 
-$(genTypeFirst 3 "TP8A" msW (\f -> [st|select #{f "top 4"} * from orders where ord_num in (?,?,?)|]))
+$(genTypeFirst 3 "MSOLD2" msW (\f -> [st|select #{f "top 4"} * from orders where ord_num in (?,?,?)|]))
 
-$(genSql "fn13" msW (\f -> [st|select #{f "top 5"} * from Agents where 1=1 |]))
+$(genSql "msold1" msW (\f -> [st|select #{f "top 5"} * from Agents where 1=1 |]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer,Int] |], _goDBParam = ''ReadOnly } "fn14" msW (\f -> [st|select #{f ""} * from Orders where ord_num in (?,?,?) |]))
+$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer,Int] |], _goDBParam = ''ReadOnly } "msold2" msW (\f -> [st|select #{f ""} * from Orders where ord_num in (?,?,?) |]))
 
-$(genSql "fn15" msW (\f -> [st|select #{f ""} count(*) as znork from Orders |]))
+$(genSql "msold3" msW (\f -> [st|select #{f ""} count(*) as znork from Orders |]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer] |], _goDBParam = ''Writeable } "fn17" msW (\f -> [st|select #{f ""} * from orders where ord_num between ? and ? |]))
+$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer] |], _goDBParam = ''Writeable } "msold4" msW (\f -> [st|select #{f ""} * from orders where ord_num between ? and ? |]))
 
 -- gives more fine grained control for more complex sql: eg using ctes where you need to do interesting things
-$(genSqlLR "fn17a" msW (\_ll _rr lr -> [st|select top #{lr "0" "5"} * from orders where 1=1 |]))
+$(genSqlLR "msold5" msW (\_ll _rr lr -> [st|select top #{lr "0" "5"} * from orders where 1=1 |]))
 
-$(genSqlLR "fn17a1" msW (\ll rr lr -> [st|select top #{lr "0" "5"} * from orders where 1=#{ll "0"}#{rr "1"} |]))
+$(genSqlLR "msold6" msW (\ll rr lr -> [st|select top #{lr "0" "5"} * from orders where 1=#{ll "0"}#{rr "1"} |]))
 

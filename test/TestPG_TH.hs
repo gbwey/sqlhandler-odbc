@@ -21,28 +21,28 @@ import Data.Vinyl
 import TablePrinter
 import TestConnections
 
-$(genSql "myfn9a" pgW (\f -> [st|select * from orders #{f "limit 4"}; select * from agents #{f "limit 3"}|]))
-$(genTypeList 10 "TP5" pgW (\f -> [st|select 14 as dude,'xx' ; select * from orders #{f "limit 4"}|]))
+$(genSql "pgsql1" pgW (\f -> [st|select * from orders #{f "limit 4"}; select * from agents #{f "limit 3"}|]))
+$(genTypeList 10 "PG1" pgW (\f -> [st|select 14 as dude,'xx' ; select * from orders #{f "limit 4"}|]))
 
-$(genSql "myfn8" pgW (\f -> [st|select * from orders #{f "limit 10"}; select 14|]))
+$(genSql "pgsql2" pgW (\f -> [st|select * from orders #{f "limit 10"}; select 14|]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[] |] } "myfn8d" pgW (\f -> [st|select * from orders #{f "limit 10"}; select 14|]))
-$(genSqlWith defGenOpts { _goDBParam = ''Writeable } "myfn8e" pgW (\f -> [st|select * from orders #{f "limit 10"}; select 14|]))
+$(genSqlWith defGenOpts { _goEnc = [t| '[] |] } "pgsql3" pgW (\f -> [st|select * from orders #{f "limit 10"}; select 14|]))
+$(genSqlWith defGenOpts { _goDBParam = ''Writeable } "pgsql4" pgW (\f -> [st|select * from orders #{f "limit 10"}; select 14|]))
 
 
-$(genSql "myfn8f" pgW (\f -> [st|select * from orders #{f "limit 10"}; select 14|]))
+$(genSql "pgsql5" pgW (\f -> [st|select * from orders #{f "limit 10"}; select 14|]))
 
 testsql :: Sql (DBPG a) '[] '[Sel (Int,Double)]
 testsql = mkSql' "select 1,5"
 
-$(genTypeFirst 10 "TP6" pgW (\f -> [st|select 14 as dude,'xx' ; select * from orders #{f "limit 4"}|]))
-$(genTypeFirst 10 "TP7" pgW (\f -> [st|select cast (? as int) as dude,'xx' ; select * from orders #{f "limit 4"}|]))
-$(genTypeFirst 10 "TP8" pgW (\f -> [st|select * from orders where ord_num in (?,?,?) #{f "limit 4"}|]))
+$(genTypeFirst 10 "PG6" pgW (\f -> [st|select 14 as dude,'xx' ; select * from orders #{f "limit 4"}|]))
+$(genTypeFirst 10 "PG7" pgW (\f -> [st|select cast (? as int) as dude,'xx' ; select * from orders #{f "limit 4"}|]))
+$(genTypeFirst 10 "PG8" pgW (\f -> [st|select * from orders where ord_num in (?,?,?) #{f "limit 4"}|]))
 -- must have the exact number of binders for mssql but not postgres
 
 -- gives more fine grained control for more complex sql: eg using ctes where you need to do interesting things
-$(genSqlLR "fn17a" pgW (\_ll _rr lr -> [st|select * from orders where 1=1 #{lr "limit 0" "limit 5"}|]))
-$(genSqlLR "fn17a1" pgW (\ll rr lr -> [st|select * from orders where 1=#{ll "0"}#{rr "1"} #{lr "limit 0" "limit 5"}|]))
+$(genSqlLR "pgsql6" pgW (\_ll _rr lr -> [st|select * from orders where 1=1 #{lr "limit 0" "limit 5"}|]))
+$(genSqlLR "pgsql7" pgW (\ll rr lr -> [st|select * from orders where 1=#{ll "0"}#{rr "1"} #{lr "limit 0" "limit 5"}|]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int] |], _goSel = ''SelOne } "fn22" pgW (\f -> [st|select cast (? as int) as dude,'xx', count(*) from orders #{f ""}|]))
+$(genSqlWith defGenOpts { _goEnc = [t| '[Int] |], _goSel = ''SelOne } "pgsql8" pgW (\f -> [st|select cast (? as int) as dude,'xx', count(*) from orders #{f ""}|]))
 

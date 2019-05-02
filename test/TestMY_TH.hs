@@ -22,16 +22,16 @@ import TablePrinter
 import TestConnections
 
 -- mysql count takes way too long
-$(genSql "fn20" myW (\f -> [st|select count(*) as znork from orders #{f ""}|]))
-$(genSqlLR "fn20a" myW (\_ll _rr lr -> [st|select #{lr "1" "count(*)"} from orders #{lr "limit 0" "limit 5"}|]))
+$(genSql "my1" myW (\f -> [st|select count(*) as znork from orders #{f ""}|]))
+$(genSqlLR "my2" myW (\_ll _rr lr -> [st|select #{lr "1" "count(*)"} from orders #{lr "limit 0" "limit 5"}|]))
 
 -- can even split the queries entirely
-$(genSqlLR "fn20c" myW (\_ll _rr lr -> lr "select count(*) as fred from orders limit 0" "select count(*) from orders"))
+$(genSqlLR "my3" myW (\_ll _rr lr -> lr "select count(*) as fred from orders limit 0" "select count(*) from orders"))
 
--- fd $ runSql myW (I2 1 "C0001%") fn20d
-$(genSqlLRWith defGenOpts { _goEnc = [t| '[Int,String] |] } "fn20d" myW (\_ll _rr lr -> lr "select * from orders limit 0" "select * from orders where ord_num>? and cust_code not like ?"))
+-- fd $ runSql myW (I2 1 "C0001%") my20d
+$(genSqlLRWith defGenOpts { _goEnc = [t| '[Int,String] |] } "my4" myW (\_ll _rr lr -> lr "select * from orders limit 0" "select * from orders where ord_num>? and cust_code not like ?"))
 
-$(genSqlWith defGenOpts { _goSel = ''SelOne } "fn20b" myW (\f -> [st|select count(*) as znork,'xxx' as field2,123 as numfld from orders #{f ""}|]))
+$(genSqlWith defGenOpts { _goSel = ''SelOne } "my5" myW (\f -> [st|select count(*) as znork,'xxx' as field2,123 as numfld from orders #{f ""}|]))
 
-$(genSql "fn21" myW (\f -> [st|select *,'somejunk' as xyz from orders #{f ""}|]))
+$(genSql "my6" myW (\f -> [st|select *,'somejunk' as xyz from orders #{f ""}|]))
 
