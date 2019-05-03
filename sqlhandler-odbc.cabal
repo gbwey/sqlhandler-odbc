@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.0.
+-- This file has been generated from package.yaml by hpack version 0.31.1.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1ed6be46013d5f3bd5a8e4160e25f6a751c0169a77f9f3c98c7cf71624966bd0
+-- hash: 38635edeb64f712c3f9b3d008360b83b16c516d5b396180b66f3f6472c612532
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -117,7 +117,7 @@ test-suite spec
       TestDBConn
       TestSqlParser
   hs-source-dirs:
-      test
+      test/unit
   ghc-options: -threaded -O0
   build-depends:
       Frames
@@ -175,7 +175,7 @@ test-suite testms
   other-modules:
       TestConnections
   hs-source-dirs:
-      test
+      test/integration
   build-depends:
       Frames
     , HDBC ==2.4.0.3
@@ -233,7 +233,7 @@ test-suite testms_sp
   other-modules:
       TestConnections
   hs-source-dirs:
-      test
+      test/integration
   build-depends:
       Frames
     , HDBC ==2.4.0.3
@@ -291,7 +291,7 @@ test-suite testmy
   other-modules:
       TestConnections
   hs-source-dirs:
-      test
+      test/integration
   build-depends:
       Frames
     , HDBC ==2.4.0.3
@@ -349,7 +349,7 @@ test-suite testoracle
   other-modules:
       TestConnections
   hs-source-dirs:
-      test
+      test/integration
   build-depends:
       Frames
     , HDBC ==2.4.0.3
@@ -407,7 +407,7 @@ test-suite testpg
   other-modules:
       TestConnections
   hs-source-dirs:
-      test
+      test/integration
   build-depends:
       Frames
     , HDBC ==2.4.0.3
@@ -465,7 +465,7 @@ test-suite testsqlite
   other-modules:
       TestConnections
   hs-source-dirs:
-      test
+      test/integration
   build-depends:
       Frames
     , HDBC ==2.4.0.3

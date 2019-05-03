@@ -91,7 +91,7 @@ tests:
     main: Spec.hs
     ghc-options: "-threaded -O0"
     source-dirs:
-      - test
+      - test/unit
     dependencies:
       - base
       - sqlhandler-odbc
@@ -104,7 +104,7 @@ tests:
 
   testms_sp: 
     main: TestMS_SP_TH.hs
-    source-dirs: test
+    source-dirs: test/integration
     when:
     - condition: flag(ms) 
       then:
@@ -118,7 +118,7 @@ tests:
     
   testms: 
     main: TestMS_TH.hs
-    source-dirs: test
+    source-dirs: test/integration
     when:
     - condition: flag(msold) 
       then:
@@ -132,7 +132,7 @@ tests:
 
   testsqlite: 
     main: TestSqlite_TH.hs
-    source-dirs: test
+    source-dirs: test/integration
     when:
     - condition: flag(sqlite) 
       then:
@@ -146,7 +146,7 @@ tests:
 
   testpg: 
     main: TestPG_TH.hs
-    source-dirs: test
+    source-dirs: test/integration
     when:
     - condition: flag(pg) 
       then:
@@ -160,7 +160,7 @@ tests:
 
   testoracle: 
     main: TestOracle_TH.hs
-    source-dirs: test
+    source-dirs: test/integration
     when:
     - condition: flag(oracle) 
       then:
@@ -174,7 +174,7 @@ tests:
 
   testmy: 
     main: TestMY_TH.hs
-    source-dirs: test
+    source-dirs: test/integration
     when:
     - condition: flag(my) 
       then:
