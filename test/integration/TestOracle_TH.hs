@@ -21,11 +21,11 @@ import Data.Vinyl
 import TablePrinter
 import TestConnections
 
-$(genSql "or1" orW (\f -> [st|select * from Agents where 1=1 and #{f "rownum < 5"} |]))
+$(genSql "or1" orW (\f -> [st|select * from mixed where 1=1 and #{f "rownum < 5"} |]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer,Int] |], _goDBParam = ''ReadOnly } "or2" orW (\f -> [st|select * from Orders where ord_num in (?,?,?) and #{f "1=1"}|]))
+$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer,Int] |], _goDBParam = ''ReadOnly } "or2" orW (\f -> [st|select * from mixed where id in (?,?,?) and #{f "1=1"}|]))
 
-$(genSql "or3" orW (\f -> [st|select count(*) as znork from Orders where #{f "1=1"}|]))
+$(genSql "or3" orW (\f -> [st|select count(*) as znork from mixed where #{f "1=1"}|]))
 
 $(genSqlWith defGenOpts { _goSel = ''SelOne } "or4" orW (\f -> [st|select 123.45, 123.45e, cast(123.45 as numeric(10,2)) as fldtest, cast (123.45 as number), cast (123.45 as decimal), cast (123.45 as float) from dual where #{f "1=1"} |]))
 

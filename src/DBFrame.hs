@@ -10,7 +10,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE PolyKinds #-} -- dude you absolutely need this!
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE AllowAmbiguousTypes #-} -- need this if not using a proxy but using only type applications [eg createFrameSql]
 {-# OPTIONS -Wall #-}
 {- |

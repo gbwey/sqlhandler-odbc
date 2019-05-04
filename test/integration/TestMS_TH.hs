@@ -23,20 +23,20 @@ import TablePrinter
 import TestConnections
 
 -- ms requires exact number of binders: the other dbs can be larger
-$(genTypeFirst 0 "MSOLD1" msW (\f -> [st|select 14 as dude,'xx' ; select #{f "top 4"} * from orders|]))
+$(genTypeFirst 0 "MSOLD1" msW (\f -> [st|select 14 as fixedval1,'xx' ; select #{f "top 4"} * from mixed|]))
 
-$(genTypeFirst 3 "MSOLD2" msW (\f -> [st|select #{f "top 4"} * from orders where ord_num in (?,?,?)|]))
+$(genTypeFirst 3 "MSOLD2" msW (\f -> [st|select #{f "top 4"} * from mixed where id in (?,?,?)|]))
 
-$(genSql "msold1" msW (\f -> [st|select #{f "top 5"} * from Agents where 1=1 |]))
+$(genSql "msold1" msW (\f -> [st|select #{f "top 5"} * from mixed where 1=1 |]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer,Int] |], _goDBParam = ''ReadOnly } "msold2" msW (\f -> [st|select #{f ""} * from Orders where ord_num in (?,?,?) |]))
+$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer,Int] |], _goDBParam = ''ReadOnly } "msold2" msW (\f -> [st|select #{f ""} * from mixed where id in (?,?,?) |]))
 
-$(genSql "msold3" msW (\f -> [st|select #{f ""} count(*) as znork from Orders |]))
+$(genSql "msold3" msW (\f -> [st|select #{f ""} count(*) as cnt1 from mixed |]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer] |], _goDBParam = ''Writeable } "msold4" msW (\f -> [st|select #{f ""} * from orders where ord_num between ? and ? |]))
+$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer] |], _goDBParam = ''Writeable } "msold4" msW (\f -> [st|select #{f ""} * from mixed where id between ? and ? |]))
 
 -- gives more fine grained control for more complex sql: eg using ctes where you need to do interesting things
-$(genSqlLR "msold5" msW (\_ll _rr lr -> [st|select top #{lr "0" "5"} * from orders where 1=1 |]))
+$(genSqlLR "msold5" msW (\_ll _rr lr -> [st|select top #{lr "0" "5"} * from mixed where 1=1 |]))
 
-$(genSqlLR "msold6" msW (\ll rr lr -> [st|select top #{lr "0" "5"} * from orders where 1=#{ll "0"}#{rr "1"} |]))
+$(genSqlLR "msold6" msW (\ll rr lr -> [st|select top #{lr "0" "5"} * from mixed where 1=#{ll "0"}#{rr "1"} |]))
 

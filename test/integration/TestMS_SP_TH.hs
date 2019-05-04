@@ -21,55 +21,51 @@ import TestConnections
 import Data.Vinyl
 import Language.Haskell.TH.Syntax (mkName)
 
-$(genMSType "MS1" msW (const "select count(*), 'abc' as field2 from orders"))
+$(genMSType "MS1" msW (const "select count(*), 'abc' as field2 from mixed"))
 -- eg Sql (DBMS a) '[] '[Sel MS1, U0]
 
-$(genMSType "MS2" msW (\f -> [st|select count(*), 'abc' as field2 from orders where cust_code <> #{f "?"} and ord_num>#{f "?"}|]))
+$(genMSType "MS2" msW (\f -> [st|select count(*), 'abc' as field2 from mixed where description not like #{f "?"} and id>#{f "?"}|]))
 
 ms1a :: Sql (DBMS Writeable) '[String,Int] '[SelOne MS2]
-ms1a = mkSql' "select count(*), 'abc' as field2 from orders"
+ms1a = mkSql' "select count(*), 'abc' as field2 from mixed"
 
-$(genMSWith defGenOpts { _goDBParam = mkName "a", _goSel = ''Sel, _goEnc = [t| '[] |] } "ms1" msW (const "select top 10 * from orders"))
+$(genMSWith defGenOpts { _goDBParam = mkName "a", _goSel = ''Sel, _goEnc = [t| '[] |] } "ms1" msW (const "select top 10 * from mixed"))
 
-$(genMSWith defGenOpts { _goSel = ''SelOne } "ms2bad" msW (const "select 1 as ff,'dude' as astring,cast (123.4 as float),567.8,567.8z"))
-$(genMSWith defGenOpts { _goSel = ''SelOne, _goDBParam = ''Writeable } "ms3bad" msW (const "select 1 as ff,'dude' as astring,cast (123.4 as float),567.8"))
+$(genMSWith defGenOpts { _goSel = ''SelOne } "ms2bad" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8,567.8z"))
+$(genMSWith defGenOpts { _goSel = ''SelOne, _goDBParam = ''Writeable } "ms3bad" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8"))
 
-$(genMSWith defGenOpts { _goSel = ''SelOne } "ms4" msW (const "select 1 as ff,'dude' as astring,cast (123.4 as float),567.8e,567.8e"))
-$(genMSWith defGenOpts { _goSel = ''SelOne, _goDBParam = ''Writeable } "ms5" msW (const "select 1 as ff,'dude' as astring,cast (123.4 as float),567.8e"))
+$(genMSWith defGenOpts { _goSel = ''SelOne } "ms4" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8e,567.8e"))
+$(genMSWith defGenOpts { _goSel = ''SelOne, _goDBParam = ''Writeable } "ms5" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8e"))
 
 $(genMSWith defGenOpts { _goDBParam = ''Writeable } "ms6" msW (const [st|
-  select top 10 o.ord_num,o.ord_amount, c.cust_name, a.agent_name, a.commission
-  from agents a, orders o, customers c
-  where c.agent_code = a.agent_code
-  and o.cust_code = c.cust_code
-  and o.ord_num > '200125'
-  order by o.ord_num desc
+  select top 10 a.*, o.id as otherid, o.total as othertotal, o.*
+  from mixed a, mixed o
+  where a.id=o.id
+  and a.description not like '%six%'
+  order by o.id desc
   |]))
 
 $(genMS "ms7" msW ''Writeable [st|
   select top 10 *
-  from agents a, customers c
-  where c.agent_code = a.agent_code
+  from mixed a, mixed c
+  where c.id = a.id
   |])
 
 $(genMS "ms8" msW (mkName "a") [st|
   select top 10 *
-  from agents a, orders o, customers c
-  where c.agent_code = a.agent_code
-  and o.cust_code = c.cust_code
-  and o.ord_num > '200125'
-  order by o.ord_num desc
+  from mixed a, mixed c
+  where c.id = a.id
+  order by c.id desc
   |])
 
 -- passing in parameters
 -- [t| Sql (DBMS a) '[String] (Sel x) |]
 $(genMSWith defGenOpts { _goEnc = [t| '[Int] |], _goDBParam = ''ReadOnly } "ms9" msW (\f -> [st|
   select top 10 *
-  from agents a, orders o, customers c
-  where c.agent_code = a.agent_code
-  and o.cust_code = c.cust_code
-  and o.ord_num > #{f "?"}
-  order by o.ord_num desc
+  from mixed a, mixed o
+  where a.id = o.id
+  and o.id > #{f "?"}
+  order by o.id desc
   |]))
 
 $(genMSWith defGenOpts { _goSel = ''SelOne, _goNameFunc = id } "ms10" msW (const [st|

@@ -18,8 +18,8 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE PolyKinds #-} -- dude you absolutely need this!
--- {-# LANGUAGE AllowAmbiguousTypes #-} -- need this if not using a proxy but using only type applications [eg createFrameSql']
+{-# LANGUAGE PolyKinds #-}
+-- {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# OPTIONS -Wall #-}
 -- {-# OPTIONS -Wno-redundant-constraints #-}
 {- |
@@ -511,7 +511,7 @@ diffDatabase' xs ys =
       bs = groupBy (on (==) fmat) as
       cs = flip map bs $ \x ->
               case sort x of
-                [Left (t1,n1,_,_),Right (t2,n2,_,_)] | _tName t1/= _tName t2 -> error "dude2"
+                [Left (t1,n1,_,_),Right (t2,n2,_,_)] | _tName t1/= _tName t2 -> error "difDatabase': oops"
                                              | otherwise -> (handleBoth (n1,n2), These t1 t2)
                 [Left (t,n,_,_)]  -> (LeftOnly n,This t)
                 [Right (t,n,_,_)] -> (RightOnly n,That t)
@@ -615,7 +615,7 @@ compareFields' m1 m2 =
       bs = groupBy (on (==) fmat) as
       cs = flip map bs $ \case
                       [Left t1@(_,z1), Right t2@(_,z2)]
-                        | T.toLower (cName z1) /= T.toLower (cName z2) -> error "dude2"
+                        | T.toLower (cName z1) /= T.toLower (cName z2) -> error "compareFields' oops"
                         | otherwise -> ((0::Int,cName z1),These t1 t2)
                       [Left t@(_,m)]  -> ((1,cName m),This t)
                       [Right t@(_,m)] -> ((2,cName m),That t)

@@ -39,7 +39,7 @@ $(genConn @DBMY "myW" ''Writeable)
 $(genConn @DBMS "msW" ''Writeable)
 $(genConn @DBPG "pgW" ''Writeable)
 $(genConn @DBOracle "orW" (mkName "a"))
-$(genConn @DBSqlite "sqlite1" ''Writeable)
+$(genConn @DBSqlite "s3W" ''Writeable)
 
 $(genConn @DBMS "msR" ''ReadOnly)
 $(genConn @DBMS "msa" (mkName "a"))
