@@ -1,4 +1,4 @@
-module Spec where
+module Main where
 import qualified TestDBConn
 import qualified TestSqlParser
 import EasyTest

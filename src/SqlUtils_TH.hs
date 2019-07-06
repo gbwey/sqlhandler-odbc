@@ -48,7 +48,7 @@ data SqlTHException =
     InvalidSql Text
   | MissingSqlMetaData Text
   | MetaDataInvalidState Text
-  deriving (Typeable,Show)
+  deriving Show
 
 instance UE.Exception SqlTHException
 

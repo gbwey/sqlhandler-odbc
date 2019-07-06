@@ -157,7 +157,7 @@ runSqlI cany vals (Sql desc enc dec sql) = do
   let hs = encodeVals enc vals
   $logDebug [st|runSqlI: #{desc} encoded vals=#{show hs}|]
   rrs <- runSqlRawI desc cany hs sql
-  case processRet dec rrs of
+  case processRet' (toZZZ dec) rrs of
     Left es -> do
                 logSqlHandlerExceptions es
                 UE.throwIO $ GBException [st|runSqlI #{desc} #{showSE es} vals=#{show vals} sql=#{sql}|]
@@ -193,7 +193,7 @@ runSqlColI cany vals (Sql desc enc dec sql) = do
   let hs = encodeVals enc vals
   $logDebug [st|runSqlColI: #{desc} encoded vals=#{show hs}|]
   rrs <- runSqlRawColI desc cany hs sql
-  case processRetCol dec rrs of
+  case processRetCol' (toZZZ dec) rrs of
     Left es -> do
                 logSqlHandlerExceptions es
                 UE.throwIO $ GBException [st|runSqlColI #{desc} #{showSE es} vals=#{show vals} sql=#{sql}|]
@@ -483,7 +483,7 @@ data TP = LeftOnly !Int
         | Less !(Int,Int,Int) -- -ve values for sorting
         | More !(Int,Int,Int) -- -ve values for sorting
         | Same !Int -- defaults to by tablename cos mostly zero
-        deriving (Show,Eq,Ord,Typeable,Data)
+        deriving (Show,Eq,Ord,Data)
 
 logDiffDatabase :: (ML e m, GConn a, GConn b) => a -> b -> m ()
 logDiffDatabase db1 db2 = do
