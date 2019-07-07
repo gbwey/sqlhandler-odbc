@@ -6,12 +6,13 @@ test0 = mkSql' "select * from mixed where id > ? order by id"
 a <- fd $ runSqlCol pgW (I1 1) test0 
 ```
 
-fd indicates we want to log this sql query in debug mode
-runSqlCol for typed sql queries that also extract the metadata so we can have nice names for display
-pgW is the connection (in this case uses Postgres database that is writeable)
-(I1 1) is the input parameter for the sql i test0
+* fd indicates we want to log this sql query in debug mode
+* runSqlCol for typed sql queries that also extract the metadata so we can have nice names for display
+* pgW is the connection (in this case uses Postgres database that is writeable)
+* (I1 1) is the input parameter for the sql i test0
 
-`wprint' a` -- display the resultset in ascii (wprint for unicode)
+```
+wprint' a -- display the resultset in ascii (wprint for unicode)
 
 resultset 1 Sel
 +----+--------+---------------------+-------------+
@@ -23,10 +24,10 @@ resultset 1 Sel
 +----+--------+---------------------+-------------+
 |  4 |  10.34 | 2007-01-02 00:00:00 | fourth row  |
 +----+--------+---------------------+-------------+
+```
 
-
--- a sample sql signature for a postgres query that takes 2 input parameters (Int and Text) 
--- and returns two resultsets (one is a single row with a text and bool field and an update that must return 1 (ie number of rows updated))
+a sample sql signature for a postgres query that takes 2 input parameters (Int and Text) 
+and returns two resultsets (one is a single row with a text and bool field and an update that must return 1 (ie number of rows updated))
 
 ```
 t1 :: Sql (DBPG Writeable) '[Int, Text] '[SelOne (Text,Bool), U1]  
@@ -39,7 +40,7 @@ a <- fd $ runSqlCol pgW (I2 2 "second row") t1
 
 wprint' a
 ```
-
+```
 resultset 1 SelOne
 +-----+------+
 | cnt | bool |
@@ -50,7 +51,7 @@ resultset 1 SelOne
 resultset 2 a == 1
 
 UpdN 1
-
+```
 
 ```
 mkdir test1
@@ -81,12 +82,12 @@ for example, if you see
   "Required field [myW.driver] not found in config [db.cfg]"
     then you need to update db.cfg (doesnt have to be valid unless you want to run stuff)
 
--- fd is debug logging
--- pgW is the postgres db connection that you set up in db.cfg
--- RNil says we dont have any input parameters
--- myfn9a is the sql to run
+* fd is debug logging
+* pgW is the postgres db connection that you set up in db.cfg
+* RNil says we dont have any input parameters
+* myfn9a is the sql to run
 
--- run the sql
+run the sql
 ```
 a <- fd $ runSql pgW RNil pgsql1
 
@@ -98,7 +99,7 @@ template haskell see test/TestPG_TH.hs
 $(genSql "pg9a" pgW (\f -> [st|select * from orders #{f "limit 4"}; select * from agents #{f "limit 3"}|]))
 
 generates the following type signature
-
+```
 >:i pg9a
 pg9a ::
   Sql
@@ -115,13 +116,14 @@ pg9a ::
            ElField
            '['("agent_code", String), '("agent_name", Maybe String),
              '("commission", Maybe Double)])]
+```
 
--- DBPG is postgres 
--- '[] means no input is required
--- Sel means a normal select
--- there are two result sets returned a rows of vinyl named records
--- the first result set has six fields: ord_num thru ord_description
--- the second result set has three fields agent_code thru commision
+* DBPG is postgres 
+* '[] means no input is required
+* Sel means a normal select
+* there are two result sets returned a rows of vinyl named records
+* the first result set has six fields: ord_num thru ord_description
+* the second result set has three fields agent_code thru commision
 
 sqlite should work as long as you have the odbc driver for sqlite 
 change the driver name in db.cfg if necessary 
@@ -199,10 +201,12 @@ a <- fd $ runSql orW RNil or1
 wprint a
 ```
 
--- set flags to activate builds for database tests
+set flags to activate builds for database tests
+```
 stack ghci --test --flag sqlhandler-odbc:sqlite
 stack ghci --test --flag sqlhandler-odbc:pg
 stack ghci --test --flag sqlhandler-odbc:ms
 stack ghci --test --flag sqlhandler-odbc:msold
 stack ghci --test --flag sqlhandler-odbc:or
 stack ghci --test --flag sqlhandler-odbc:my
+```
