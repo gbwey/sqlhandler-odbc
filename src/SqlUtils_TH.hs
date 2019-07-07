@@ -42,7 +42,6 @@ import qualified Data.Set as Set
 import Data.Set (Set)
 import qualified Control.Monad.State as S
 import qualified Data.Map.Strict as M
-import Data.Typeable
 
 data SqlTHException =
     InvalidSql Text

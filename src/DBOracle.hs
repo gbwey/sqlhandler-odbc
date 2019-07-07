@@ -12,7 +12,6 @@ abc aBc ABC Abc etc are all the same and == "ABC"
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS -Wall #-}
 {- |

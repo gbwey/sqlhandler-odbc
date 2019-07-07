@@ -55,7 +55,6 @@ import Util
 import Data.These
 import qualified Formatting as F
 import Formatting ((%.),(%))
-import Data.Typeable
 import GConn
 import Data.Data
 import Data.Text.Lazy.Builder (fromText)
@@ -157,7 +156,7 @@ runSqlI cany vals (Sql desc enc dec sql) = do
   let hs = encodeVals enc vals
   $logDebug [st|runSqlI: #{desc} encoded vals=#{show hs}|]
   rrs <- runSqlRawI desc cany hs sql
-  case processRet' (toZZZ dec) rrs of
+  case processRet dec rrs of
     Left es -> do
                 logSqlHandlerExceptions es
                 UE.throwIO $ GBException [st|runSqlI #{desc} #{showSE es} vals=#{show vals} sql=#{sql}|]
@@ -193,7 +192,7 @@ runSqlColI cany vals (Sql desc enc dec sql) = do
   let hs = encodeVals enc vals
   $logDebug [st|runSqlColI: #{desc} encoded vals=#{show hs}|]
   rrs <- runSqlRawColI desc cany hs sql
-  case processRetCol' (toZZZ dec) rrs of
+  case processRetCol dec rrs of
     Left es -> do
                 logSqlHandlerExceptions es
                 UE.throwIO $ GBException [st|runSqlColI #{desc} #{showSE es} vals=#{show vals} sql=#{sql}|]
