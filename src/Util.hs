@@ -429,16 +429,3 @@ dumpDecHex bs = do
   putStrLn $ "hex=" ++ unwords (map hexChar (B.unpack bs))
   putStrLn $ "dec=" ++ unwords (map (\c -> [c,'_']) (B.unpack bs))
 
-
-{-# INLINE zipWithExact_ #-}
-zipWithExact_ :: (Show a, Show b) => (String -> r) -> r -> (a -> b -> r -> r) -> [a] -> [b] -> r
-zipWithExact_ err nil cns as bs = f as bs
-    where
-        f (x:xs) (y:ys) = cns x y $ f xs ys
-        f [] [] = nil
-        f [] _ = err $ "zipWithExact_: second list is longer than the first " ++ show (as,bs)
-        f _ [] = err $ "zipWithExact_: first list is longer than the second " ++ show (as,bs)
-
-zipWithExactNote :: (Show a, Show b) => String -> (a -> b -> c) -> [a] -> [b] -> [c]
-zipWithExactNote note f = zipWithExact_ (\msg -> error $ "zipWithExactNote: " ++ msg ++ ": " ++ note) []  (\a b xs -> f a b : xs)
-

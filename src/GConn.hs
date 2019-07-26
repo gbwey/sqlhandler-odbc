@@ -209,14 +209,6 @@ dropped = "Dropped"
 notfound = "NotFound"
 found = "Found"
 
-connAuth :: Maybe (String, String) -> String
-connAuth Nothing = "Trusted_Connection=yes"
-connAuth (Just (uid,pwd)) = T.unpack [st|uid=#{uid};pwd=#{pwd}|]
-
-bcpauth :: Maybe (String, String) -> [String]
-bcpauth Nothing = ["-T"]
-bcpauth (Just (uid,pwd)) = ["-U" <> uid, "-P" <> pwd]
-
 getEffectiveSchema :: GConn a => a -> Table a -> Maybe Text
 getEffectiveSchema db t =
   case _tSchema t of
@@ -307,3 +299,13 @@ showSchema :: Schema -> Text
 showSchema ConnSchema = "ConnSchema"
 showSchema (Schema (fromMaybe "" -> s)) = s
 
+newtype Pwd = Pwd { unPwd :: String } deriving Eq
+
+instance Show Pwd where
+  show (Pwd _) = "********"
+
+instance IsString Pwd where
+  fromString = Pwd
+
+instance ToText Pwd where
+  toText = fromText . T.pack . show

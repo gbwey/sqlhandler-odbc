@@ -46,7 +46,7 @@ import qualified UnliftIO as UE
 data DBMS a = DBMS {
                  _msdriver :: !Text
                , _msserver :: !Text
-               , _authn :: !(Maybe (String, String))
+               , _authn :: !(Maybe (String, Pwd))
                , _msdb :: !Text
                } deriving (Show, Eq, Generic)
 
@@ -71,8 +71,7 @@ instance GConn (DBMS a) where
                  o -> runIO $ UE.throwIO $ GBException [st|loadConnTH DBMS: authn choose uid+pwd or nothing at all found o=#{show o}|]
     [| DBMS $(stringE driver) $(stringE server) $(auth) $(stringE db) |]
 
-  -- use SQL Server Native Client 11.0 instead of just SQL Server and run outside of ghci: ie stack build then stack exec
-  connText DBMS {..} = [st|#{_msdriver};Server=#{_msserver};Database=#{_msdb};#{connAuth _authn};MARS_Connection=Yes;|]
+  connText DBMS {..} = [st|#{_msdriver};Server=#{_msserver};Database=#{_msdb};#{connAuth _authn};|]
   connCSharpText DBMS {..} = T.unpack [st|Server=#{_msserver};Database=#{_msdb};#{connAuthMSSQLCSharp _authn};Connection Timeout=0;MultipleActiveResultSets=true;|] -- Packet Size=32767
   ignoreDisconnectError _ = True
   showDb DBMS {..} = [st|mssql ip=#{_msserver} db=#{_msdb}|]
@@ -185,9 +184,9 @@ mssqlType (cLength &&& T.toLower . cType -> (len,ss))
   | ss `elem` ["clob","text"] = CCLOB
   | otherwise = COther ss
 
-connAuthMSSQLCSharp :: Maybe (String, String) -> String
+connAuthMSSQLCSharp :: Maybe (String, Pwd) -> String
 connAuthMSSQLCSharp Nothing = "Trusted_Connection=True"
-connAuthMSSQLCSharp (Just (uid,pwd)) = T.unpack [st|User Id=#{uid};Password=#{pwd}|]
+connAuthMSSQLCSharp (Just (uid,Pwd pwd)) = T.unpack [st|User Id=#{uid};Password=#{pwd}|]
 
 mkTrusted :: HasCallStack => DBMS a -> DBMS a
 mkTrusted z@DBMS {..} = z { _authn = maybe (error "already trusted!!!") (const Nothing) _authn }
@@ -342,4 +341,12 @@ select 'NUMERIC_ROUNDABORT',case when (8192 & @options) = 8192 then 1 else 0 end
 union all
 select 'XACT_ABORT',case when (16384 & @options) = 16384 then 1 else 0 end
 |]
+
+connAuth :: Maybe (String, Pwd) -> String
+connAuth Nothing = "Trusted_Connection=yes"
+connAuth (Just (uid,Pwd pwd)) = T.unpack [st|uid=#{uid};pwd=#{pwd}|]
+
+bcpauth :: Maybe (String, Pwd) -> [String]
+bcpauth Nothing = ["-T"]
+bcpauth (Just (uid,Pwd pwd)) = ["-U" <> uid, "-P" <> pwd]
 

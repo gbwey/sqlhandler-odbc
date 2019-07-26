@@ -47,7 +47,7 @@ data OracleConnType = TnsName !Text !Text | DsnOracle !Text deriving (Show, Gene
 
 data DBOracle a = DBOracle { _orConnType :: OracleConnType
                            , _oruid :: !Text
-                           , _orpwd :: !Text
+                           , _orpwd :: !Pwd
                            , _orschema :: !Text
                            } deriving (Show, Generic)
 
@@ -77,8 +77,8 @@ instance GConn (DBOracle a) where
     [| DBOracle $(orconsplice) $(stringE uid) $(stringE pwd) $(stringE db) |]
 
   connText DBOracle {..} = case _orConnType of
-                             TnsName driverdsn tns -> [st|#{driverdsn}; dbq=#{tns}; Uid=#{_oruid}; Pwd=#{_orpwd};|]
-                             DsnOracle dsn -> [st|DSN=#{dsn}; Uid=#{_oruid}; Pwd=#{_orpwd};|]
+                             TnsName driverdsn tns -> [st|#{driverdsn}; dbq=#{tns}; Uid=#{_oruid}; Pwd=#{unPwd _orpwd};|]
+                             DsnOracle dsn -> [st|DSN=#{dsn}; Uid=#{_oruid}; Pwd=#{unPwd _orpwd};|]
   connCSharpText = undefined
   showDb DBOracle {..} = [st|oracle #{_orConnType} schema=#{_orschema}|]
   getSchema = Just . _orschema

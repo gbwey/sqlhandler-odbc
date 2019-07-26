@@ -43,7 +43,7 @@ import Language.Haskell.TH hiding (Dec)
 data DBMY a = DBMY { _mydriverdsn :: !Text
                    , _myserver :: !Text
                    , _myuid :: !Text
-                   , _mypwd :: !Text
+                   , _mypwd :: !Pwd
                    , _mydb :: !Text
                    , _myport :: !(Maybe Int)
                    } deriving (Show, Generic)
@@ -66,7 +66,7 @@ instance GConn (DBMY a) where
     (mport :: Maybe Int) <- runIO $ C.lookup c (k <> ".port")
     [| DBMY $(stringE driver) $(stringE server) $(stringE uid) $(stringE pwd) $(stringE db) $(TH.lift mport) |]
 
-  connText DBMY {..} = [st|#{_mydriverdsn};Server=#{_myserver};Port=#{fromMaybe 3306 _myport};Database=#{_mydb};User=#{_myuid};Password=#{_mypwd};option=67108864|]
+  connText DBMY {..} = [st|#{_mydriverdsn};Server=#{_myserver};Port=#{fromMaybe 3306 _myport};Database=#{_mydb};User=#{_myuid};Password=#{unPwd _mypwd};option=67108864|]
   connCSharpText = undefined
   showDb DBMY {..} = [st|mysql ip=#{_myserver} db=#{_mydb}|]
   getSchema = Just . _mydb -- no schemas within dbs ie treats dbs as if it is a schema!!!

@@ -20,7 +20,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
 -- {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# OPTIONS -Wall #-}
+{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
 -- {-# OPTIONS -Wno-redundant-constraints #-}
 {- |
 Module      : DBConn
@@ -96,12 +96,6 @@ data CreateTable = CreateTable | SkipCreate deriving (Show,Eq)
 
 instance ToText CreateTable where
   toText = fromText . T.pack . show
-
-{-
-old code had a splitter to bust up dml sql
-ERROR: H.SqlError {seState = "[\"42000\",\"42000\"]", seNativeError = -1, seErrorMsg = "execute execute: [\"111: [Microsoft][SQL Server Native Client 11.0][SQL Server]'CREATE/ALTER PROCEDURE' must be the first statement in a query batch.\",\"8180: [Microsoft][SQL Server Native Client 11.0][SQL Server]
-Statement(s) could not be prepared.\"]"}
--}
 
 -- |'RunSqlOK' checks to see that we are not trying to write to a readonly database
 type RunSqlOk b db = P.FailUnless (P.Impl (WriteableRS b) (WriteableDB db)) ('Text "Readonly database does not allow Upd") P.Mempty -- (() :: Constraint)

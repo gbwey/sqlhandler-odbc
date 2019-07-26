@@ -47,7 +47,7 @@ data DBPG a = DBPG {
                    , _pgserver :: !Text
                    , _pgschema :: Maybe Text
                    , _pguid :: !Text
-                   , _pgpwd :: !Text
+                   , _pgpwd :: !Pwd
                    , _pgdb :: !Text
                    , _pgport :: !(Maybe Int)
                    } deriving (Show, Generic)
@@ -72,7 +72,7 @@ instance GConn (DBPG a) where
     (mport :: Maybe Int) <- runIO $ C.lookup c (k <> ".port")
     [| DBPG $(stringE driver) $(stringE server) $(schemasplice) $(stringE uid) $(stringE pwd) $(stringE db) $(lift mport) |]
 
-  connText DBPG {..} = [st|#{_pgdriverdsn};Server=#{_pgserver};Port=#{fromMaybe 5432 _pgport};Database=#{_pgdb};Uid=#{_pguid};Pwd=#{_pgpwd};|]
+  connText DBPG {..} = [st|#{_pgdriverdsn};Server=#{_pgserver};Port=#{fromMaybe 5432 _pgport};Database=#{_pgdb};Uid=#{_pguid};Pwd=#{unPwd _pgpwd};|]
   connCSharpText = undefined
   showDb DBPG {..} = [st|postgres ip=#{_pgserver} db=#{_pgdb}|]
   getSchema = _pgschema -- not sure how to specify the schema for postgres odbc

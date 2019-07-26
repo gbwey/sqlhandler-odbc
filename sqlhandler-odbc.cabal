@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 38635edeb64f712c3f9b3d008360b83b16c516d5b396180b66f3f6472c612532
+-- hash: 8f414bb738c319c63b49d1f871eae61bb17e954e30f7314de09033982fb3125a
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -71,6 +71,7 @@ library
     , base >=4.7 && <=5.1
     , bytestring
     , clock
+    , conduit
     , configurator
     , containers
     , directory
@@ -103,6 +104,7 @@ library
     , time
     , transformers
     , typelevel
+    , unix-time >=0.4.6
     , unliftio
     , unliftio-core
     , unordered-containers
@@ -127,6 +129,7 @@ test-suite spec
     , base
     , bytestring
     , clock
+    , conduit
     , configurator
     , containers
     , directory
@@ -162,6 +165,7 @@ test-suite spec
     , time
     , transformers
     , typelevel
+    , unix-time >=0.4.6
     , unliftio
     , unliftio-core
     , unordered-containers
@@ -183,6 +187,7 @@ test-suite testms
     , base
     , bytestring
     , clock
+    , conduit
     , configurator
     , containers
     , directory
@@ -216,6 +221,7 @@ test-suite testms
     , time
     , transformers
     , typelevel
+    , unix-time >=0.4.6
     , unliftio
     , unliftio-core
     , unordered-containers
@@ -241,6 +247,7 @@ test-suite testms_sp
     , base
     , bytestring
     , clock
+    , conduit
     , configurator
     , containers
     , directory
@@ -274,6 +281,7 @@ test-suite testms_sp
     , time
     , transformers
     , typelevel
+    , unix-time >=0.4.6
     , unliftio
     , unliftio-core
     , unordered-containers
@@ -299,6 +307,7 @@ test-suite testmy
     , base
     , bytestring
     , clock
+    , conduit
     , configurator
     , containers
     , directory
@@ -332,6 +341,7 @@ test-suite testmy
     , time
     , transformers
     , typelevel
+    , unix-time >=0.4.6
     , unliftio
     , unliftio-core
     , unordered-containers
@@ -357,6 +367,7 @@ test-suite testoracle
     , base
     , bytestring
     , clock
+    , conduit
     , configurator
     , containers
     , directory
@@ -390,6 +401,7 @@ test-suite testoracle
     , time
     , transformers
     , typelevel
+    , unix-time >=0.4.6
     , unliftio
     , unliftio-core
     , unordered-containers
@@ -415,6 +427,7 @@ test-suite testpg
     , base
     , bytestring
     , clock
+    , conduit
     , configurator
     , containers
     , directory
@@ -448,6 +461,7 @@ test-suite testpg
     , time
     , transformers
     , typelevel
+    , unix-time >=0.4.6
     , unliftio
     , unliftio-core
     , unordered-containers
@@ -473,6 +487,7 @@ test-suite testsqlite
     , base
     , bytestring
     , clock
+    , conduit
     , configurator
     , containers
     , directory
@@ -506,6 +521,7 @@ test-suite testsqlite
     , time
     , transformers
     , typelevel
+    , unix-time >=0.4.6
     , unliftio
     , unliftio-core
     , unordered-containers

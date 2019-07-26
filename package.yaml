@@ -34,6 +34,7 @@ dependencies:
 - unordered-containers
 - bytestring
 - clock
+- conduit
 - configurator
 - containers
 - directory
@@ -68,6 +69,7 @@ dependencies:
 - time
 - transformers
 - typelevel
+- unix-time >= 0.4.6
 - unliftio
 - unliftio-core
 - uuid
@@ -99,8 +101,8 @@ tests:
       - QuickCheck
       - easytest
     other-modules: 
-    - TestDBConn
-    - TestSqlParser
+     - TestDBConn
+     - TestSqlParser
 
   testms_sp: 
     main: TestMS_SP_TH.hs
