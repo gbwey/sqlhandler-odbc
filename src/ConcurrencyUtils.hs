@@ -33,6 +33,7 @@ import qualified UnliftIO as U
 import qualified UnliftIO.Async as UA
 import qualified UnliftIO.Exception as UE
 import Logging
+import GHC.Stack
 
 newtype ThreadPool = ThreadPool { thOverride :: Maybe Int } deriving (Show,Eq)
 
@@ -70,14 +71,14 @@ paditC pcnt (length &&& id -> (len, x)) =
              $logWarn [st|padit: had to pad field: expected pcnt=#{pcnt} found #{len} x=#{show x}|]
              return (x <> replicate (pcnt - len) SqlNull)
 
-cv :: (ColDataType, ColumnMeta) -> SqlValue -> SqlValue
-cv (cd, ColumnMeta{..}) a = case a of
+convertUsingMeta :: HasCallStack => (ColDataType, ColumnMeta) -> SqlValue -> SqlValue
+convertUsingMeta (cd, ColumnMeta{..}) a = case a of
   SqlByteString bs -> case cd of
                         CFixedString -> SqlString $ B8.unpack bs
                         CString      -> SqlString $ B8.unpack bs
                         CInt         -> SqlInteger $ read (B8.unpack bs)
-                        CDateTime    -> error $ "dude " ++ show cd ++ " bs=" ++ show bs
-                        CDate        -> error $ "dude " ++ show cd ++ " bs=" ++ show bs
+                        CDateTime    -> error $ "convertUsingMeta: unsupported type " ++ show cd ++ " bs=" ++ show bs
+                        CDate        -> error $ "convertUsingMeta: unsupported type " ++ show cd ++ " bs=" ++ show bs
                         CFloat       -> SqlDouble $ read (B8.unpack bs)
                         CBool        -> SqlInt32 $ read (B8.unpack bs)
                         CBinary      -> a

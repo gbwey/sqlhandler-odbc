@@ -1,22 +1,23 @@
-# sqlhandler-odbc
+# sqlhandler-odbc 
+## database package using [hdbc-odbc](https://github.com/gbwey/hdbc-odbc)
 
 * write native SQL for Postgres/MSSQL/Oracle/MySql/Sqlite using the ODBC protocol
 * fully configurable encoding of SQL input parameters and decoding of SQL output (see [sqlhandler](https://github.com/gbwey/sqlhandler))
-* supports fully typed SQL signatures
+* supports typed SQL signatures
 * supports multiple resultsets where supported, i.e. MSSQL and Postgres
 * optional template haskell methods for generating type safe signatures from SQL metadata
 * optional template haskell methods to generate database connections using configuration file conn.dhall
-* supports fully configurable logging using Dhall
-* supports [predicates](https://github.com/gbwey/predicate) for the SQL output which if fails then will log where the failure occurred and rollback the transaction
-* supports a fully configurable pretty printer of SQL results in table format leveraging SQL metadata
+* supports configurable logging 
+* supports a configurable pretty printer of SQL results in table format leveraging SQL metadata
 * can mark your queries or connections as ReadOnly which is enforced at compile time
 * supports streaming queries using conduit combinators
-* supports [refined types](https://github.com/gbwey/predicate-typed) allowing for refined fields for any sql columns
-      -- the encoding / decoding and validation is all handled
+* supports [refined types](https://github.com/gbwey/predicate-typed) allowing for refined fields for any sql columns:
+    the encoding / decoding and validation is all handled
+* supports [predicates](https://github.com/gbwey/predicate) for the SQL output which if fails then will log where the failure occurred and rollback the transaction
 
-log.dhall has the logging configuration
-conn.dhall has database connections for use in template haskell and testing
-  by default there is an entry for sqlite3 using a test database s3.db
+* log.dhall has the logging configuration
+* conn.dhall has database connections for use in template haskell and testing
+  -- by default there is an entry for sqlite3 using a test database s3.db
 
 
 
@@ -66,6 +67,7 @@ it :: ()
 
 -- run a typed query using refinement types
 >a <- fd $ runSql s3W RNil s3_test1
+
 >wprint a
 
 
