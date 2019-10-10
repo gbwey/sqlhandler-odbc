@@ -12,12 +12,15 @@
 * can mark your queries or connections as ReadOnly which is enforced at compile time
 * supports streaming queries using conduit combinators
 * supports [refined types](https://github.com/gbwey/predicate-typed) allowing for refined fields for any sql columns
-      the encoding / decoding and validation is all handled
+      -- the encoding / decoding and validation is all handled
 
 log.dhall has the logging configuration
 conn.dhall has database connections for use in template haskell and testing
   by default there is an entry for sqlite3 using a test database s3.db
 
+
+
+```text
 stack ghci --test
 :l test\integration\TestSqlite_TH.hs test\integration\TestConnections.hs
 
@@ -74,4 +77,4 @@ resultset 1 Sel
 +-----------------------------------------+----------------------------------¦
 ¦ R3:(1970-01-01 00:00:00 UTC,0)          ¦ R3:([123,12,2222],"123-12-2222") ¦
 +----------------------------------------------------------------------------+
-
+```
