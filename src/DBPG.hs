@@ -15,6 +15,8 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS -Wall #-}
 {- |
 Module      : DBPG
@@ -36,23 +38,25 @@ import Sql
 import Control.Arrow
 import GHC.Generics (Generic)
 import Control.Lens.TH
-import Util
 import Language.Haskell.TH.Syntax
-import Language.Haskell.TH
-import qualified Data.Configurator as C
-import Data.Maybe
+import Dhall hiding (maybe,string)
+import Logging
+import qualified Language.Haskell.TH.Syntax as TH
 
 data DBPG a = DBPG {
                      _pgdriverdsn :: !Text
                    , _pgserver :: !Text
                    , _pgschema :: Maybe Text
                    , _pguid :: !Text
-                   , _pgpwd :: !Pwd
+                   , _pgpwd :: !Secret
                    , _pgdb :: !Text
-                   , _pgport :: !(Maybe Int)
-                   } deriving (Show, Generic)
+                   , _pgport :: !(Maybe Natural)
+                   } deriving (TH.Lift, Show, Generic)
 
 makeLenses ''DBPG
+
+instance Interpret (DBPG a) where
+  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
 
 type instance WriteableDB (DBPG Writeable) = 'True
 
@@ -61,18 +65,10 @@ instance ToText (DBPG a) where
 
 instance GConn (DBPG a) where
   loadConnTH _ k = do
-    c <- runIO loadFromConfig
-    driver <- runIO $ req c (k <> ".driver")
-    server <- runIO $ req c (k <> ".server")
-    mschema <- runIO $ C.lookup c (k <> ".schema")
-    uid <- runIO $ req c (k <> ".uid")
-    pwd <- runIO $ req c (k <> ".pwd")
-    db <- runIO $ req c (k <> ".db")
-    let schemasplice = maybe [| Nothing |] (\x -> [| Just $(stringE x) |]) mschema
-    (mport :: Maybe Int) <- runIO $ C.lookup c (k <> ".port")
-    [| DBPG $(stringE driver) $(stringE server) $(schemasplice) $(stringE uid) $(stringE pwd) $(stringE db) $(lift mport) |]
+    c <- runIO $ loadConn @(DBPG a) k
+    TH.lift c
 
-  connText DBPG {..} = [st|#{_pgdriverdsn};Server=#{_pgserver};Port=#{fromMaybe 5432 _pgport};Database=#{_pgdb};Uid=#{_pguid};Pwd=#{unPwd _pgpwd};|]
+  connText DBPG {..} = [st|#{_pgdriverdsn};Server=#{_pgserver};Port=#{maybe "5432" show _pgport};Database=#{_pgdb};Uid=#{_pguid};Pwd=#{unSecret _pgpwd};|]
   connCSharpText = undefined
   showDb DBPG {..} = [st|postgres ip=#{_pgserver} db=#{_pgdb}|]
   getSchema = _pgschema -- not sure how to specify the schema for postgres odbc

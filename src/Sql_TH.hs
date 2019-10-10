@@ -1,5 +1,5 @@
+-- could generate insert statements based on metadata (skip identity computed fields etc) and refined types on columns (not so useful as the data is dynamic)
 -- add filter on column names and column type
--- bearbeiten: there is duplication here when generating signatures createSignatureFromMeta  iiMeta
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DataKinds #-}
@@ -10,6 +10,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE KindSignatures #-}
 {- |
 Module      : Sql_TH
 Description : Template haskell for generating Sql and Sql signatures
@@ -35,7 +36,7 @@ import GConn
 import qualified Data.Text as T
 import Data.Text (Text)
 import SqlUtils_TH
-import Util
+import Logging
 import Sql
 import Data.Tagged
 import Data.Proxy
@@ -110,15 +111,38 @@ getlen (AppT _ xs) = 1 + getlen xs
 getlen PromotedNilT = 0
 getlen o = error $ "getlen: unknown type=" ++ show o
 
-
+-- https://markkarpov.com/tutorial/th.html#typed-expressions
+--   It appears that returning something polymorphic is not yet possible! so have to use genConn
 -- | generates a database connection adt from the given parameters
 -- uses 'fn' as the key into the db.cfg file
 genConn :: forall db a . GConn (db a) => String -> TH.Name -> Q [TS.Dec]
-genConn fn nn = do
-  z <- loadConnTH (Proxy @(db a)) (T.pack fn)
-  let nm = mkName fn
+genConn key nn = do
+  z <- loadConnTH (Proxy @(db a)) (T.pack key)
+  let nm = mkName key
   let tp = AppT (ConT (getDbDefault (Proxy @(db a)))) (simpleTypeTH nn)
   return [SigD nm tp, ValD (VarP nm) (NormalB z) []]
+
+-- no support for polymorphic types: will default to Any which is not what you want
+-- $(genConn @DBMY "myW" ''Writeable)
+-- myW :: DBMY Writeable
+-- myW = $$(genConn1 @DBMY @Writeable)
+
+-- | generates a database connection adt from the given parameters
+-- uses 'fn' as the key into the db.cfg file
+{-
+genConn1 :: forall db a . GConn (db a) => String -> Q (TS.TExp (db a))
+genConn1 key = do
+  z <- loadConnTH (Proxy @(db a)) (T.pack key)
+  return $ TS.TExp z -- return [SigD nm tp, ValD (VarP nm) (NormalB z) []]
+-}
+-- myW = $$(genConn2 @(DBMY Writeable))
+-- no support for polymorphic types: will default to Any which is not what you want
+-- | generates a database connection adt from the given parameters
+-- uses 'fn' as the key into the db.cfg file
+genConn2 :: forall db . GConn db => String -> Q (TS.TExp db)
+genConn2 key = do
+  z <- loadConnTH (Proxy @db) (T.pack key)
+  return $ TS.TExp z -- return [SigD nm tp, ValD (VarP nm) (NormalB z) []]
 
 -- | 'simpleTypeTH' extracts the template haskell type from the given name: eg ''Writeable becomes ConT ''Writeable and ConT (mkName "a") becomes ConT (VarT "a")
 simpleTypeTH :: TH.Name -> TH.Type
@@ -230,18 +254,19 @@ ffHdbc (nm, tp, b) = p ((if b then AppT (ConT ''Maybe) else id) ret)
 -- | 'genTypeList' creates a type synonym for a promoted list of Sel
 -- need specify the number of binders. For mssql it has to be exact but for the other
 -- database types it has to be at least as many input parameters
-genTypeList :: GConn db => Int -> String -> db -> FN1 -> Q [TS.Dec]
+genTypeList :: GConn db => String -> db -> FN1 -> Q [TS.Dec]
 genTypeList = genTypeList' ''Sel
 
 -- | 'genTypeListOne' creates a type synonym for a promoted list of SelOne
-genTypeListOne :: GConn db => Int -> String -> db -> FN1 -> Q [TS.Dec]
+genTypeListOne :: GConn db => String -> db -> FN1 -> Q [TS.Dec]
 genTypeListOne = genTypeList' ''SelOne
 
-genTypeList' :: GConn db => TH.Name -> Int -> String -> db -> FN1 -> Q [TS.Dec]
-genTypeList' sel binders fn db sql = do
+genTypeList' :: GConn db => TH.Name -> String -> db -> FN1 -> Q [TS.Dec]
+genTypeList' sel fn db sqlfn = do
   runIO $ putStrLn $ "\ngenTypeList " ++ fn ++ " " ++ show sel ++ " " ++ show (getDbDefault (Tagged db))
   let limit = limitSql (tagSelf db) (Just 0)
-  ms <- runIO $ fs $ runRawCol db (replicate binders SqlNull) (sql (const limit))
+  let sql = sqlfn (const limit)
+  ms <- runIO $ fs $ runRawCol db (replicate (countBinders sql) SqlNull) sql
   xxs <- forM ms $ \m ->
           case getSqlMetasHdbc id m of
             Left e -> UE.throwIO e
@@ -250,20 +275,28 @@ genTypeList' sel binders fn db sql = do
   return [TySynD (mkName fn) [] z]
 
 -- | 'genTypeFirst' creates a type synonym of the form Sel (Rec ElField '[...])
-genTypeFirst :: GConn db => Int -> String -> db -> FN1 -> Q [TS.Dec]
+genTypeFirst :: GConn db => String -> db -> FN1 -> Q [TS.Dec]
 genTypeFirst = genTypeFirst' ''Sel
 
 -- | 'genTypeFirstOne' is the same as 'genTypeFirst' but for 'SelOne' instead of 'Sel'
-genTypeFirstOne :: GConn db => Int -> String -> db -> FN1 -> Q [TS.Dec]
+genTypeFirstOne :: GConn db => String -> db -> FN1 -> Q [TS.Dec]
 genTypeFirstOne = genTypeFirst' ''SelOne
 
 -- | 'genTypeFirst'' generates a type synonym for the first resultset (fails if first is an update) and stops before running any more resultsets
-genTypeFirst' :: GConn db => TH.Name -> Int -> String -> db -> FN1 -> Q [TS.Dec]
-genTypeFirst' sel binders fn db sql = do
+genTypeFirst' :: GConn db => TH.Name -> String -> db -> FN1 -> Q [TS.Dec]
+genTypeFirst' sel fn db sqlfn = do
   runIO $ putStrLn $ "\ngenTypeFirst " ++ fn ++ " " ++ show sel ++ " " ++ show (getDbDefault (Tagged db))
   let limit = limitSql (tagSelf db) (Just 0)
-  m <- runIO $ fs $ runRawCol1 db (replicate binders SqlNull) (sql (const limit))
+  let sql = sqlfn (const limit)
+  ms <- runIO $ fs $ runRawCol db (replicate (countBinders sql) SqlNull) sql
+  m <- case ms of
+         []  -> UE.throwIO $ GBException [st|genTypeFirst': no resultset found and so no metadata|]
+         r:_ -> pure r
   xs <- case getSqlMetasHdbc id m of
             Left e -> UE.throwIO e
             Right smds -> return smds
   return [TySynD (mkName fn) [] (createSignatureFromMeta sel xs)]
+
+-- todo: make this a sql parser
+countBinders :: Text -> Int
+countBinders = T.length . T.filter (=='?') 

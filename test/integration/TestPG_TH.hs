@@ -15,14 +15,14 @@ import GConn
 import DBPG
 import Sql_TH
 import Sql
-import Util
+import Logging
 import Text.Shakespeare.Text
 import Data.Vinyl
 import TablePrinter
 import TestConnections
 
 $(genSql "pgsql1" pgW (\f -> [st|select * from mixed #{f "limit 4"}; select id,description from mixed where id>2 #{f "limit 3"}|]))
-$(genTypeList 10 "PG1" pgW (\f -> [st|select 14 as fixedval1,'xx' ; select * from mixed #{f "limit 4"}|]))
+$(genTypeList "PG1" pgW (\f -> [st|select 14 as fixedval1,'xx' ; select * from mixed #{f "limit 4"}|]))
 
 $(genSql "pgsql2" pgW (\f -> [st|select * from mixed #{f "limit 10"}; select 14|]))
 
@@ -35,9 +35,9 @@ $(genSql "pgsql5" pgW (\f -> [st|select * from mixed #{f "limit 10"}; select 14|
 testsql :: Sql (DBPG a) '[] '[Sel (Int,Double)]
 testsql = mkSql' "select 1,5"
 
-$(genTypeFirst 10 "PG6" pgW (\f -> [st|select 14 as fixedval1,'xx' ; select * from mixed #{f "limit 4"}|]))
-$(genTypeFirst 10 "PG7" pgW (\f -> [st|select cast (? as int) as fixedval1,'xx' ; select * from mixed #{f "limit 4"}|]))
-$(genTypeFirst 10 "PG8" pgW (\f -> [st|select * from mixed where id in (?,?,?) #{f "limit 4"}|]))
+$(genTypeFirst "PG6" pgW (\f -> [st|select 14 as fixedval1,'xx' ; select * from mixed #{f "limit 4"}|]))
+$(genTypeFirst "PG7" pgW (\f -> [st|select cast (? as int) as fixedval1,'xx' ; select * from mixed #{f "limit 4"}|]))
+$(genTypeFirst "PG8" pgW (\f -> [st|select * from mixed where id in (?,?,?) #{f "limit 4"}|]))
 -- must have the exact number of binders for mssql but not postgres
 
 -- gives more fine grained control for more complex sql: eg using ctes where you need to do interesting things

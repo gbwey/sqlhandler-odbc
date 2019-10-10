@@ -15,7 +15,7 @@ import GConn
 import Sql_TH
 import DBOracle
 import Sql
-import Util
+import Logging
 import Text.Shakespeare.Text
 import Data.Vinyl
 import TablePrinter

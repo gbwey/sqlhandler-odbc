@@ -27,7 +27,6 @@ import Text.Shakespeare.Text
 import qualified Data.Text as T
 import Data.Text (Text)
 import Control.Monad
-import Util
 import Data.Typeable
 import GConn
 import DBConn
@@ -36,6 +35,7 @@ import Data.Vinyl
 import qualified Data.Vinyl.Functor as V
 import GHC.TypeLits
 import qualified Frames as F
+import Logging
 
 -- U0 works in Mssql but in postgres it use a random number so have to make it Upd
 -- | 'createFrameSql' generates a sql statement to create a table based on the fieldnames and types in the proxy
@@ -60,11 +60,16 @@ insertFrameSql tab _ =
       len = length cnames
       flds = T.intercalate "," $ map (escapeField tab . T.pack) cnames
       tt = escapeField tab (_tName tab)
-  in mkSql ("insertFrameSql " ++ T.unpack (_tName tab)) [st|insert into #{tt} (#{flds}) values#{qqsn len}|]
+  in mkSql [st|insertFrameSql #{tab}|] [st|insert into #{tt} (#{flds}) values#{qqsn len}|]
 
 -- | 'insertFrameLoad' loads a table with the frame using the names and types from the frame
-insertFrameLoad :: forall db m e rs t . (Foldable t, ML e m, ToMetas rs, DefEnc (Rec Enc (Unlabeled rs)), F.ColumnHeaders rs, RecordToList (Unlabeled rs), ReifyConstraint Show V.Identity (Unlabeled rs), StripFieldNames rs, RMap (Unlabeled rs), GConnWrite db)
-    => CreateTable -> db -> Table db -> t (F rs) -> m ()
+insertFrameLoad :: forall db m e rs t 
+   . (Foldable t, ML e m, ToMetas rs, DefEnc (Rec Enc (Unlabeled rs)), F.ColumnHeaders rs, RecordToList (Unlabeled rs), ReifyConstraint Show V.Identity (Unlabeled rs), StripFieldNames rs, RMap (Unlabeled rs), GConnWrite db)
+    => CreateTable
+    -> db
+    -> Table db
+    -> t (F rs) 
+    -> m ()
 insertFrameLoad cre db tab ff = do
   case cre of
     CreateTable -> runSql_ db RNil $ createFrameSql @db @rs tab

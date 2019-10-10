@@ -28,7 +28,7 @@ import Text.Shakespeare.Text
 import qualified Data.Text as T
 import Data.Text (Text)
 import Control.Monad.IO.Class
-import System.FilePath
+import System.IO
 import System.Directory
 import Data.List
 import Data.Char
@@ -36,7 +36,22 @@ import Data.Maybe
 import Control.Applicative
 import Text.Regex.Applicative
 import Data.Foldable
-import RegexHelper
+import Data.Function
+--import RegexHelper
+
+space :: RE Char Char
+space = psym isSpace
+
+spaces, spaces1 :: RE Char String
+spaces = many space
+spaces1 = some space
+
+symCI :: Char -> RE Char Char
+symCI c = psym (on (==) toLower c)
+
+-- case insenstive match on a string
+stringCI :: String -> RE Char String
+stringCI = traverse symCI
 
 validName :: RE Char String
 validName = (:) <$> psym isAlpha <*> many (psym (\c -> isAlphaNum c || c `elem` ("-_[]" :: String)))

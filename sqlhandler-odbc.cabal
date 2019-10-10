@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8f414bb738c319c63b49d1f871eae61bb17e954e30f7314de09033982fb3125a
+-- hash: d6f5de980d89eac31d60715f656e5f088f9c8eb1da08cf5a6adb93865d51a9fa
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -14,7 +14,10 @@ license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 data-files:
-    db.cfg
+    conn.dhall
+    coreconn.dhall
+    log.dhall
+    corelog.dhall
 
 flag ms
   description: run mssql th
@@ -41,13 +44,9 @@ flag pg
   manual: True
   default: False
 
-flag sqlite
-  description: run sqlite th
-  manual: True
-  default: False
-
 library
   exposed-modules:
+      ConcurrencyUtils
       DBConn
       DBFrame
       DBMSSQL
@@ -59,68 +58,57 @@ library
       Sql_TH
       SqlParser
       SqlUtils_TH
-      Util
-      Util_TH
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fomit-interface-pragmas
   build-depends:
       Frames
     , HDBC ==2.4.0.3
     , HDBC-odbc ==2.5.0.2
     , base >=4.7 && <=5.1
     , bytestring
-    , clock
-    , conduit
-    , configurator
     , containers
+    , dhall
     , directory
-    , extra
-    , fast-logger
-    , filepath
-    , foldl
     , formatting
-    , generic-lens
     , generics-sop
     , ghc-prim
-    , iso8601-time
     , lens
-    , lens-datetime
-    , mime-mail
+    , logging
     , monad-logger
     , mtl
     , predicate
+    , predicate-typed
     , regex-applicative
     , resourcet
     , semigroups
     , shakespeare
-    , smtp-mail
-    , split
     , sqlhandler
     , tagged
     , template-haskell
     , text
     , these
     , time
-    , transformers
     , typelevel
     , unix-time >=0.4.6
     , unliftio
-    , unliftio-core
-    , unordered-containers
     , uuid
     , vinyl >=0.10.0.0
   default-language: Haskell2010
 
 test-suite spec
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: TestS3.hs
   other-modules:
+      TestConnections
+      TestSqlite_TH
       TestDBConn
       TestSqlParser
+      Spec
   hs-source-dirs:
+      test/integration
       test/unit
-  ghc-options: -threaded -O0
+  ghc-options: -threaded -O0 -fomit-interface-pragmas
   build-depends:
       Frames
     , HDBC ==2.4.0.3
@@ -128,34 +116,24 @@ test-suite spec
     , QuickCheck
     , base
     , bytestring
-    , clock
-    , conduit
-    , configurator
     , containers
+    , dhall
     , directory
     , easytest
-    , extra
-    , fast-logger
-    , filepath
-    , foldl
     , formatting
-    , generic-lens
     , generics-sop
     , ghc-prim
     , hspec
-    , iso8601-time
     , lens
-    , lens-datetime
-    , mime-mail
+    , logging
     , monad-logger
     , mtl
     , predicate
+    , predicate-typed
     , regex-applicative
     , resourcet
     , semigroups
     , shakespeare
-    , smtp-mail
-    , split
     , sqlhandler
     , sqlhandler-odbc
     , tagged
@@ -163,372 +141,24 @@ test-suite spec
     , text
     , these
     , time
-    , transformers
     , typelevel
     , unix-time >=0.4.6
     , unliftio
-    , unliftio-core
-    , unordered-containers
-    , uuid
-    , vinyl >=0.10.0.0
-  default-language: Haskell2010
-
-test-suite testms
-  type: exitcode-stdio-1.0
-  main-is: TestMS_TH.hs
-  other-modules:
-      TestConnections
-  hs-source-dirs:
-      test/integration
-  build-depends:
-      Frames
-    , HDBC ==2.4.0.3
-    , HDBC-odbc ==2.5.0.2
-    , base
-    , bytestring
-    , clock
-    , conduit
-    , configurator
-    , containers
-    , directory
-    , extra
-    , fast-logger
-    , filepath
-    , foldl
-    , formatting
-    , generic-lens
-    , generics-sop
-    , ghc-prim
-    , iso8601-time
-    , lens
-    , lens-datetime
-    , mime-mail
-    , monad-logger
-    , mtl
-    , predicate
-    , regex-applicative
-    , resourcet
-    , semigroups
-    , shakespeare
-    , smtp-mail
-    , split
-    , sqlhandler
-    , sqlhandler-odbc
-    , tagged
-    , template-haskell
-    , text
-    , these
-    , time
-    , transformers
-    , typelevel
-    , unix-time >=0.4.6
-    , unliftio
-    , unliftio-core
-    , unordered-containers
-    , uuid
-    , vinyl >=0.10.0.0
-  if flag(msold)
-    buildable: True
-  else
-    buildable: False
-  default-language: Haskell2010
-
-test-suite testms_sp
-  type: exitcode-stdio-1.0
-  main-is: TestMS_SP_TH.hs
-  other-modules:
-      TestConnections
-  hs-source-dirs:
-      test/integration
-  build-depends:
-      Frames
-    , HDBC ==2.4.0.3
-    , HDBC-odbc ==2.5.0.2
-    , base
-    , bytestring
-    , clock
-    , conduit
-    , configurator
-    , containers
-    , directory
-    , extra
-    , fast-logger
-    , filepath
-    , foldl
-    , formatting
-    , generic-lens
-    , generics-sop
-    , ghc-prim
-    , iso8601-time
-    , lens
-    , lens-datetime
-    , mime-mail
-    , monad-logger
-    , mtl
-    , predicate
-    , regex-applicative
-    , resourcet
-    , semigroups
-    , shakespeare
-    , smtp-mail
-    , split
-    , sqlhandler
-    , sqlhandler-odbc
-    , tagged
-    , template-haskell
-    , text
-    , these
-    , time
-    , transformers
-    , typelevel
-    , unix-time >=0.4.6
-    , unliftio
-    , unliftio-core
-    , unordered-containers
     , uuid
     , vinyl >=0.10.0.0
   if flag(ms)
-    buildable: True
-  else
-    buildable: False
-  default-language: Haskell2010
-
-test-suite testmy
-  type: exitcode-stdio-1.0
-  main-is: TestMY_TH.hs
-  other-modules:
-      TestConnections
-  hs-source-dirs:
-      test/integration
-  build-depends:
-      Frames
-    , HDBC ==2.4.0.3
-    , HDBC-odbc ==2.5.0.2
-    , base
-    , bytestring
-    , clock
-    , conduit
-    , configurator
-    , containers
-    , directory
-    , extra
-    , fast-logger
-    , filepath
-    , foldl
-    , formatting
-    , generic-lens
-    , generics-sop
-    , ghc-prim
-    , iso8601-time
-    , lens
-    , lens-datetime
-    , mime-mail
-    , monad-logger
-    , mtl
-    , predicate
-    , regex-applicative
-    , resourcet
-    , semigroups
-    , shakespeare
-    , smtp-mail
-    , split
-    , sqlhandler
-    , sqlhandler-odbc
-    , tagged
-    , template-haskell
-    , text
-    , these
-    , time
-    , transformers
-    , typelevel
-    , unix-time >=0.4.6
-    , unliftio
-    , unliftio-core
-    , unordered-containers
-    , uuid
-    , vinyl >=0.10.0.0
-  if flag(my)
-    buildable: True
-  else
-    buildable: False
-  default-language: Haskell2010
-
-test-suite testoracle
-  type: exitcode-stdio-1.0
-  main-is: TestOracle_TH.hs
-  other-modules:
-      TestConnections
-  hs-source-dirs:
-      test/integration
-  build-depends:
-      Frames
-    , HDBC ==2.4.0.3
-    , HDBC-odbc ==2.5.0.2
-    , base
-    , bytestring
-    , clock
-    , conduit
-    , configurator
-    , containers
-    , directory
-    , extra
-    , fast-logger
-    , filepath
-    , foldl
-    , formatting
-    , generic-lens
-    , generics-sop
-    , ghc-prim
-    , iso8601-time
-    , lens
-    , lens-datetime
-    , mime-mail
-    , monad-logger
-    , mtl
-    , predicate
-    , regex-applicative
-    , resourcet
-    , semigroups
-    , shakespeare
-    , smtp-mail
-    , split
-    , sqlhandler
-    , sqlhandler-odbc
-    , tagged
-    , template-haskell
-    , text
-    , these
-    , time
-    , transformers
-    , typelevel
-    , unix-time >=0.4.6
-    , unliftio
-    , unliftio-core
-    , unordered-containers
-    , uuid
-    , vinyl >=0.10.0.0
-  if flag(oracle)
-    buildable: True
-  else
-    buildable: False
-  default-language: Haskell2010
-
-test-suite testpg
-  type: exitcode-stdio-1.0
-  main-is: TestPG_TH.hs
-  other-modules:
-      TestConnections
-  hs-source-dirs:
-      test/integration
-  build-depends:
-      Frames
-    , HDBC ==2.4.0.3
-    , HDBC-odbc ==2.5.0.2
-    , base
-    , bytestring
-    , clock
-    , conduit
-    , configurator
-    , containers
-    , directory
-    , extra
-    , fast-logger
-    , filepath
-    , foldl
-    , formatting
-    , generic-lens
-    , generics-sop
-    , ghc-prim
-    , iso8601-time
-    , lens
-    , lens-datetime
-    , mime-mail
-    , monad-logger
-    , mtl
-    , predicate
-    , regex-applicative
-    , resourcet
-    , semigroups
-    , shakespeare
-    , smtp-mail
-    , split
-    , sqlhandler
-    , sqlhandler-odbc
-    , tagged
-    , template-haskell
-    , text
-    , these
-    , time
-    , transformers
-    , typelevel
-    , unix-time >=0.4.6
-    , unliftio
-    , unliftio-core
-    , unordered-containers
-    , uuid
-    , vinyl >=0.10.0.0
+    other-modules:
+        TestMS_TH
+  if flag(msold)
+    other-modules:
+        TestMSOld_TH
   if flag(pg)
-    buildable: True
-  else
-    buildable: False
-  default-language: Haskell2010
-
-test-suite testsqlite
-  type: exitcode-stdio-1.0
-  main-is: TestSqlite_TH.hs
-  other-modules:
-      TestConnections
-  hs-source-dirs:
-      test/integration
-  build-depends:
-      Frames
-    , HDBC ==2.4.0.3
-    , HDBC-odbc ==2.5.0.2
-    , base
-    , bytestring
-    , clock
-    , conduit
-    , configurator
-    , containers
-    , directory
-    , extra
-    , fast-logger
-    , filepath
-    , foldl
-    , formatting
-    , generic-lens
-    , generics-sop
-    , ghc-prim
-    , iso8601-time
-    , lens
-    , lens-datetime
-    , mime-mail
-    , monad-logger
-    , mtl
-    , predicate
-    , regex-applicative
-    , resourcet
-    , semigroups
-    , shakespeare
-    , smtp-mail
-    , split
-    , sqlhandler
-    , sqlhandler-odbc
-    , tagged
-    , template-haskell
-    , text
-    , these
-    , time
-    , transformers
-    , typelevel
-    , unix-time >=0.4.6
-    , unliftio
-    , unliftio-core
-    , unordered-containers
-    , uuid
-    , vinyl >=0.10.0.0
-  if flag(sqlite)
-    buildable: True
-  else
-    buildable: False
+    other-modules:
+        TestPG_TH
+  if flag(oracle)
+    other-modules:
+        TestOracle_TH
+  if flag(my)
+    other-modules:
+        TestMY_TH
   default-language: Haskell2010

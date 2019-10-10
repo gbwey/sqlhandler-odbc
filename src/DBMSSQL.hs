@@ -13,6 +13,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS -Wall #-}
 {- |
 Module      : DBMSSQL
@@ -37,20 +38,28 @@ import Data.Vinyl
 import GHC.Stack
 import GHC.Generics (Generic)
 import Control.Lens.TH
-import qualified Data.Configurator as C
-import Util
 import Language.Haskell.TH.Syntax -- (Lift)
-import Language.Haskell.TH
-import qualified UnliftIO as UE
+import qualified Language.Haskell.TH.Syntax as TH
+import Dhall hiding (maybe,string)
+import Logging
+
+data MSAuthn = Trusted | UserPwd { _msUser :: Text, _msPassword :: Secret }
+  deriving (TH.Lift, Show, Eq, Generic)
+
+instance Interpret MSAuthn where
+  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
 
 data DBMS a = DBMS {
                  _msdriver :: !Text
                , _msserver :: !Text
-               , _authn :: !(Maybe (String, Pwd))
+               , _msauthn :: !MSAuthn
                , _msdb :: !Text
-               } deriving (Show, Eq, Generic)
+               } deriving (TH.Lift, Show, Eq, Generic)
 
 makeLenses ''DBMS
+
+instance Interpret (DBMS a) where
+  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
 
 type instance WriteableDB (DBMS Writeable) = 'True
 
@@ -59,20 +68,11 @@ instance ToText (DBMS a) where
 
 instance GConn (DBMS a) where
   loadConnTH _ k = do
-    c <- runIO loadFromConfig
-    uid <- runIO $ C.lookup c (k <> ".uid")
-    pwd <- runIO $ C.lookup c (k <> ".pwd")
-    server <- runIO $ req c (k <> ".server")
-    db <- runIO $ req c (k <> ".db")
-    driver <- runIO $ req c (k <> ".driver")
-    let auth = case (uid,pwd) of
-                 (Just uid', Just pwd') -> [| Just ($(stringE uid'), $(stringE pwd')) |]
-                 (Nothing, Nothing) -> [| Nothing |]
-                 o -> runIO $ UE.throwIO $ GBException [st|loadConnTH DBMS: authn choose uid+pwd or nothing at all found o=#{show o}|]
-    [| DBMS $(stringE driver) $(stringE server) $(auth) $(stringE db) |]
+    c <- runIO $ loadConn @(DBMS a) k
+    TH.lift c
 
-  connText DBMS {..} = [st|#{_msdriver};Server=#{_msserver};Database=#{_msdb};#{connAuth _authn};|]
-  connCSharpText DBMS {..} = T.unpack [st|Server=#{_msserver};Database=#{_msdb};#{connAuthMSSQLCSharp _authn};Connection Timeout=0;MultipleActiveResultSets=true;|] -- Packet Size=32767
+  connText DBMS {..} = [st|#{_msdriver};Server=#{_msserver};Database=#{_msdb};#{connAuth _msauthn};|]
+  connCSharpText DBMS {..} = T.unpack [st|Server=#{_msserver};Database=#{_msdb};#{connAuthMSSQLCSharp _msauthn};Connection Timeout=0;MultipleActiveResultSets=true;|] -- Packet Size=32767
   ignoreDisconnectError _ = True
   showDb DBMS {..} = [st|mssql ip=#{_msserver} db=#{_msdb}|]
   getSchema = const Nothing
@@ -184,17 +184,19 @@ mssqlType (cLength &&& T.toLower . cType -> (len,ss))
   | ss `elem` ["clob","text"] = CCLOB
   | otherwise = COther ss
 
-connAuthMSSQLCSharp :: Maybe (String, Pwd) -> String
-connAuthMSSQLCSharp Nothing = "Trusted_Connection=True"
-connAuthMSSQLCSharp (Just (uid,Pwd pwd)) = T.unpack [st|User Id=#{uid};Password=#{pwd}|]
+connAuthMSSQLCSharp :: MSAuthn -> String
+connAuthMSSQLCSharp Trusted = "Trusted_Connection=True"
+connAuthMSSQLCSharp (UserPwd uid (Secret pwd)) = T.unpack [st|User Id=#{uid};Password=#{pwd}|]
 
 mkTrusted :: HasCallStack => DBMS a -> DBMS a
-mkTrusted z@DBMS {..} = z { _authn = maybe (error "already trusted!!!") (const Nothing) _authn }
+mkTrusted z@DBMS {..} = z { _msauthn = case _msauthn of
+                                          Trusted -> error "mkTrusted: already trusted!!!"
+                                          UserPwd {} -> Trusted }
 
-mssql :: forall b a db . (DefDec (Rec SingleIn b), DefEnc (Rec Enc a)) => String -> Text -> Sql (DBMS db) a b
+mssql :: forall b a db . (DefDec (Rec SingleIn b), DefEnc (Rec Enc a)) => Text -> Text -> Sql (DBMS db) a b
 mssql x w = mkSql x ("set arithabort on;\n" <> w)
 
-mssql' :: forall b a db . String -> Rec Enc a -> Rec SingleIn b -> Text -> Sql (DBMS db) a b
+mssql' :: forall b a db . Text -> Rec Enc a -> Rec SingleIn b -> Text -> Sql (DBMS db) a b
 mssql' x y z w = Sql x y z ("set arithabort on;\n" <> w)
 
 type PKeysMSSQL db = F '["tab" ::: Table (DBMS db), "pkname" ::: Text, "fillfactor" ::: Int, "itype" ::: Text, "cnames" ::: Text]
@@ -291,7 +293,7 @@ FROM sys.tables AS t
 JOIN sys.partitions AS p
 ON t.object_id = p.object_id
 AND p.index_id IN ( 0, 1 )
-GROUP BY SCHEMA_NAME(schema_id), t.name, t.create_date, t.modify_date;
+GROUP BY SCHEMA_NAME(schema_id), t.name, t.create_date, t.modify_date
 |]
 
 -- | 'wrapNonTransaction' is used for mssql only for running outside of transaction
@@ -342,11 +344,11 @@ union all
 select 'XACT_ABORT',case when (16384 & @options) = 16384 then 1 else 0 end
 |]
 
-connAuth :: Maybe (String, Pwd) -> String
-connAuth Nothing = "Trusted_Connection=yes"
-connAuth (Just (uid,Pwd pwd)) = T.unpack [st|uid=#{uid};pwd=#{pwd}|]
+connAuth :: MSAuthn -> String
+connAuth Trusted = "Trusted_Connection=yes"
+connAuth (UserPwd uid (Secret pwd)) = T.unpack [st|uid=#{uid};pwd=#{pwd}|]
 
-bcpauth :: Maybe (String, Pwd) -> [String]
-bcpauth Nothing = ["-T"]
-bcpauth (Just (uid,Pwd pwd)) = ["-U" <> uid, "-P" <> pwd]
+bcpauth :: MSAuthn -> [String]
+bcpauth Trusted = ["-T"]
+bcpauth (UserPwd uid (Secret pwd)) = ["-U" <> T.unpack uid, "-P" <> T.unpack pwd]
 

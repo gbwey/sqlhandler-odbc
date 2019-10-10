@@ -13,6 +13,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS -Wall #-}
 {- |
 Module      : DBMY
@@ -33,22 +35,24 @@ import Data.Text.Lazy.Builder (fromText)
 import GConn
 import Sql
 import GHC.Generics (Generic)
-import Data.Maybe
 import Control.Lens.TH
 import qualified Language.Haskell.TH.Syntax as TH
-import Util
-import qualified Data.Configurator as C
 import Language.Haskell.TH hiding (Dec)
+import Dhall hiding (maybe,string)
+import Logging
 
 data DBMY a = DBMY { _mydriverdsn :: !Text
                    , _myserver :: !Text
                    , _myuid :: !Text
-                   , _mypwd :: !Pwd
+                   , _mypwd :: !Secret
                    , _mydb :: !Text
-                   , _myport :: !(Maybe Int)
-                   } deriving (Show, Generic)
+                   , _myport :: !(Maybe Natural)
+                   } deriving (TH.Lift, Show, Generic)
 
 makeLenses ''DBMY
+
+instance Interpret (DBMY a) where
+  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
 
 type instance WriteableDB (DBMY Writeable) = 'True
 
@@ -57,16 +61,10 @@ instance ToText (DBMY a) where
 
 instance GConn (DBMY a) where
   loadConnTH _ k = do
-    c <- runIO loadFromConfig
-    driver <- runIO $ req c (k <> ".driver")
-    server <- runIO $ req c (k <> ".server")
-    uid <- runIO $ req c (k <> ".uid")
-    pwd <- runIO $ req c (k <> ".pwd")
-    db <- runIO $ req c (k <> ".db")
-    (mport :: Maybe Int) <- runIO $ C.lookup c (k <> ".port")
-    [| DBMY $(stringE driver) $(stringE server) $(stringE uid) $(stringE pwd) $(stringE db) $(TH.lift mport) |]
+    c <- runIO $ loadConn @(DBMY a) k
+    TH.lift c
 
-  connText DBMY {..} = [st|#{_mydriverdsn};Server=#{_myserver};Port=#{fromMaybe 3306 _myport};Database=#{_mydb};User=#{_myuid};Password=#{unPwd _mypwd};option=67108864|]
+  connText DBMY {..} = [st|#{_mydriverdsn};Server=#{_myserver};Port=#{maybe "3306" show _myport};Database=#{_mydb};User=#{_myuid};Password=#{unSecret _mypwd};option=67108864|]
   connCSharpText = undefined
   showDb DBMY {..} = [st|mysql ip=#{_myserver} db=#{_mydb}|]
   getSchema = Just . _mydb -- no schemas within dbs ie treats dbs as if it is a schema!!!

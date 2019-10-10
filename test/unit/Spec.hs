@@ -1,9 +1,9 @@
-module Main where
+module Spec where
 import qualified TestDBConn
 import qualified TestSqlParser
 import EasyTest
 
-main :: IO ()
-main = do
+spec :: IO ()
+spec = do
   run TestDBConn.suite
   run TestSqlParser.suite

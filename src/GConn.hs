@@ -16,6 +16,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DeriveLift #-}
 {-# OPTIONS -Wall #-}
 {-|
 Module      : GConn
@@ -46,10 +47,15 @@ import Sql
 import TablePrinter (FromField(..))
 import qualified Generics.SOP as GS
 import qualified GHC.Generics as G
-import Data.List.Extra (trim)
 import GHC.Stack
 import Data.Vinyl
 import qualified Language.Haskell.TH as TH
+import Dhall hiding (maybe,string)
+import Data.List
+import Data.Char
+
+loadConn :: forall a . Interpret a => Text -> IO a
+loadConn key = input auto ("let x = ./conn.dhall in x." <> key)
 
 data Writeable
 data ReadOnly
@@ -82,6 +88,9 @@ instance GConn a => IsString (Table a) where
       Left _ -> Table Nothing ConnSchema (stripQuotes mdelims (T.strip (T.pack ss))) True
       Right a -> a
 
+trim :: String -> String
+trim = dropWhileEnd isSpace . dropWhile isSpace
+
 parseTableLR :: forall a. GConn a => String -> Either String (Table a)
 parseTableLR ss' =
     let mdelims = getDelims (Proxy @a)
@@ -109,16 +118,30 @@ showTableImpl mq Table {..} =
 
 type GConnWrite db = (WriteableDB db ~ 'True, GConn db)
 
+-- todo: provide runSqlRawE that allows you to pass in extra odbc params or just use runSqlRawI that allows you to pass in the connection!
+-- | creates a database connection
+getConn' :: GConn a
+      => [(Text, Text)]
+      -> a
+      -> IO H.Connection
+getConn' odbcparams db =
+  let cs = connText db
+      ret = case odbcparams of
+              [] -> mempty
+              _ -> let xs = T.intercalate ";" (map (\(a,b) -> a <> "=" <> b) odbcparams)
+                   in (if T.last cs == ';' then "" else ";") <> xs
+  in H.connectODBC (T.unpack (cs <> ret))
+
 -- | 'GConn' is the central class to this package. Each database type needs to implement this.
 class ToText a => GConn a where  -- Show a was causing infinite loop on compile if we omit MyLogger: to do with Streaming undecidableinstances and show instance for the stream
   -- | given a key it loads a Template Haskell expression for the database connection
   loadConnTH :: p a -> Text -> TH.Q TH.Exp
-  -- | creates a database connection
-  getconn :: a -> IO H.Connection
-  getconn = H.connectODBC . T.unpack . connText
+  getConn :: a -> IO H.Connection
+  getConn = getConn' []
   -- | return the odbc connection string
   connText :: a -> Text
   -- | the sqlite odbc driver misbehaves so we need to ignore the disconnect error
+  -- todo: is this still a problem (still on windows but need to test)
   ignoreDisconnectError :: proxy a -> Bool
   ignoreDisconnectError _ = False
   -- | c# connection string
@@ -298,14 +321,3 @@ commonFields mpref sql =
 showSchema :: Schema -> Text
 showSchema ConnSchema = "ConnSchema"
 showSchema (Schema (fromMaybe "" -> s)) = s
-
-newtype Pwd = Pwd { unPwd :: String } deriving Eq
-
-instance Show Pwd where
-  show (Pwd _) = "********"
-
-instance IsString Pwd where
-  fromString = Pwd
-
-instance ToText Pwd where
-  toText = fromText . T.pack . show

@@ -4,7 +4,7 @@ author: Grant Weyburne
 maintainer: gbwey9@gmail.com
 license: BSD3
 # stack ghci --test --flag sqlhandler-odbc:my
-flags: 
+flags:
   ms:
     description: run mssql th
     manual: yes
@@ -25,56 +25,42 @@ flags:
     description: run oracle th
     manual: yes
     default: no
-  sqlite:
-    description: run sqlite th
-    manual: yes
-    default: no
-    
+
 dependencies:
-- unordered-containers
-- bytestring
-- clock
-- conduit
-- configurator
-- containers
-- directory
-- extra
-- fast-logger
-- filepath
-- foldl
-- formatting
 - Frames
+- HDBC == 2.4.0.3
+- HDBC-odbc == 2.5.0.2
+- bytestring
+- containers
+- dhall
+- directory
+- either
+- safe
+- formatting
 - generics-sop
 - ghc-prim
-- HDBC == 2.4.0.3
-- HDBC-odbc ==2.5.0.2
-- iso8601-time
 - lens
-- lens-datetime
-- mime-mail
+- logging
 - monad-logger
 - mtl
 - predicate
+- predicate-typed
 - regex-applicative
 - resourcet
 - semigroups
 - shakespeare
-- smtp-mail
-- split
 - sqlhandler
 - tagged
 - template-haskell
 - text
 - these
 - time
-- transformers
 - typelevel
 - unix-time >= 0.4.6
 - unliftio
-- unliftio-core
 - uuid
 - vinyl >= 0.10.0.0
-- generic-lens
+
 default-extensions: []
 library:
   source-dirs: src
@@ -84,110 +70,47 @@ library:
   - -Wincomplete-record-updates
   - -Wincomplete-uni-patterns
   - -Wredundant-constraints
+  - -fomit-interface-pragmas
   other-modules: []
   dependencies:
   - base >=4.7 && <=5.1
 
 tests:
   spec:
-    main: Spec.hs
-    ghc-options: "-threaded -O0"
+    main: TestS3.hs
+    ghc-options:
+    - -threaded
+    - -O0
+    - -fomit-interface-pragmas
     source-dirs:
-      - test/unit
+    - test/integration
+    - test/unit
     dependencies:
       - base
       - sqlhandler-odbc
-      - hspec 
+      - hspec
       - QuickCheck
       - easytest
-    other-modules: 
-     - TestDBConn
-     - TestSqlParser
-
-  testms_sp: 
-    main: TestMS_SP_TH.hs
-    source-dirs: test/integration
+    other-modules:
+    - TestConnections
+    - TestSqlite_TH
+    - TestDBConn
+    - TestSqlParser
+    - Spec
     when:
-    - condition: flag(ms) 
-      then:
-        buildable: True
-      else:
-        buildable: False
-    dependencies:
-      - base
-      - sqlhandler-odbc
-    other-modules: TestConnections
-    
-  testms: 
-    main: TestMS_TH.hs
-    source-dirs: test/integration
-    when:
-    - condition: flag(msold) 
-      then:
-        buildable: True
-      else:
-        buildable: False
-    dependencies:
-      - base
-      - sqlhandler-odbc
-    other-modules: TestConnections
+    - condition: flag(ms)
+      other-modules: TestMS_TH
+    - condition: flag(msold)
+      other-modules: TestMSOld_TH
+    - condition: flag(pg)
+      other-modules: TestPG_TH
+    - condition: flag(oracle)
+      other-modules: TestOracle_TH
+    - condition: flag(my)
+      other-modules: TestMY_TH
 
-  testsqlite: 
-    main: TestSqlite_TH.hs
-    source-dirs: test/integration
-    when:
-    - condition: flag(sqlite) 
-      then:
-        buildable: True
-      else:
-        buildable: False
-    dependencies:
-      - base
-      - sqlhandler-odbc
-    other-modules: TestConnections
-
-  testpg: 
-    main: TestPG_TH.hs
-    source-dirs: test/integration
-    when:
-    - condition: flag(pg) 
-      then:
-        buildable: True
-      else:
-        buildable: False
-    dependencies:
-      - base
-      - sqlhandler-odbc
-    other-modules: TestConnections
-
-  testoracle: 
-    main: TestOracle_TH.hs
-    source-dirs: test/integration
-    when:
-    - condition: flag(oracle) 
-      then:
-        buildable: True
-      else:
-        buildable: False
-    dependencies:
-      - base
-      - sqlhandler-odbc
-    other-modules: TestConnections
-
-  testmy: 
-    main: TestMY_TH.hs
-    source-dirs: test/integration
-    when:
-    - condition: flag(my) 
-      then:
-        buildable: True
-      else:
-        buildable: False
-    dependencies:
-      - base
-      - sqlhandler-odbc
-    other-modules: TestConnections
-
-
-data-files: 
-- db.cfg
+data-files:
+- conn.dhall
+- coreconn.dhall
+- log.dhall
+- corelog.dhall

@@ -30,7 +30,6 @@ import Data.Text (Text)
 import Control.Monad
 import qualified Database.HDBC as H
 import Control.Arrow
-import Util
 import Control.Lens
 import Sql
 import Data.Vinyl
@@ -42,6 +41,7 @@ import qualified Data.Set as Set
 import Data.Set (Set)
 import qualified Control.Monad.State as S
 import qualified Data.Map.Strict as M
+import Logging
 
 data SqlTHException =
     InvalidSql Text
@@ -97,7 +97,7 @@ cleanName t =
                    | isUpper c -> Just (T.cons (toLower c) cs)
                    | otherwise -> Just (T.cons '_' (T.cons c cs))
 
-getSqlMetasHdbc :: (Text -> Text) -> HMeta -> Either SqlTHException [(String, TH.Name, Bool)]
+getSqlMetasHdbc :: (Text -> Text) -> RMeta -> Either SqlTHException [(String, TH.Name, Bool)]
 getSqlMetasHdbc fn hms =
   flip S.evalStateT Set.empty $
     forM (itoList hms) $ uncurry (getSqlMetaHdbc fn)

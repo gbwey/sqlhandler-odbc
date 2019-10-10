@@ -51,7 +51,6 @@ import qualified Data.ByteString.Char8 as B8
 import Data.ByteString (ByteString)
 import Data.Function
 import Data.Ord
-import Util
 import Data.These
 import qualified Formatting as F
 import Formatting ((%.),(%))
@@ -61,7 +60,6 @@ import Data.Text.Lazy.Builder (fromText)
 import Control.Lens
 import Sql
 import GHC.Stack
-import Data.Tuple.Extra (dupe)
 import Data.Vinyl
 import qualified Data.Vinyl as V
 import qualified Data.Vinyl.Functor as V
@@ -74,6 +72,7 @@ import Data.UUID (UUID)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
 import Data.Maybe
+import Logging
 
 type HSQL = [(Integer, Maybe [[SqlValue]])]
 
@@ -140,17 +139,17 @@ runSqlUnsafe :: (TSql b a
                , ML e m
                , GConn db
                  ) => db -> Rec V.Identity a -> Sql db a b -> m (Rec ZZZ b)
-runSqlUnsafe db vals sql = withDB db $ \cany -> runSqlI cany vals sql
+runSqlUnsafe db vals sql = withDB db $ \conn -> runSqlI conn vals sql
 
 -- | 'runSqlI' is like 'runSql' but reuses the connection from 'withDB'
 runSqlI :: (TSql b a
           , ML e m) =>
             HConn db -> Rec V.Identity a -> Sql db a b -> m (Rec ZZZ b)
-runSqlI cany vals (Sql desc enc dec sql) = do
+runSqlI conn vals (Sql desc enc dec sql) = do
   let hs = encodeVals enc vals
   $logDebug [st|runSqlI: #{desc} encoded vals=#{show hs}|]
-  rrs <- runSqlRawI desc cany hs sql
-  case processRet dec rrs of
+  rrs <- runSqlRawI conn hs sql
+  case processRetCol dec rrs of
     Left es -> do
                 logSqlHandlerExceptions es
                 UE.throwIO $ GBException [st|runSqlI #{desc} #{showSE es} vals=#{show vals} sql=#{sql}|]
@@ -161,130 +160,64 @@ logSqlHandlerExceptions es = do
   let len = length es
   forM_ (itoList es) $ \(i,e) -> $logError [st|#{succ i} of #{len}: #{seShortMessage e}|]
 
-
--- |'runSqlCol' is the same as 'runSql' but adds meta data to the query ouput
-runSqlCol :: (TSql b a
-            , RunSqlOk b db
-            , ML e m
-            , GConn db
-            ) => db -> Rec V.Identity a -> Sql db a b -> m (Rec ZZZ b)
-runSqlCol = runSqlColUnsafe -- db vals sql = withDB db $ \cany -> runSqlI cany vals sql
-
--- |'runSqlColUnsafe' is the same as 'runSqlUnsafe' but adds meta data to the query ouput
-runSqlColUnsafe :: (TSql b a
-                  , ML e m
-                  , GConn db
-                  ) => db -> Rec V.Identity a -> Sql db a b -> m (Rec ZZZ b)
-runSqlColUnsafe db vals sql = withDB db $ \cany -> runSqlColI cany vals sql
-
--- | 'runSqlColI' is like 'runSqlI' but add meta data to the query output
-runSqlColI :: (TSql b a
-             , ML e m
-             , GConn db
-             ) => HConn db -> Rec V.Identity a -> Sql db a b -> m (Rec ZZZ b)
-runSqlColI cany vals (Sql desc enc dec sql) = do
-  let hs = encodeVals enc vals
-  $logDebug [st|runSqlColI: #{desc} encoded vals=#{show hs}|]
-  rrs <- runSqlRawColI desc cany hs sql
-  case processRetCol dec rrs of
-    Left es -> do
-                logSqlHandlerExceptions es
-                UE.throwIO $ GBException [st|runSqlColI #{desc} #{showSE es} vals=#{show vals} sql=#{sql}|]
-    Right zzz -> return zzz
-
 -- | 'runSqlRawI runs an untyped query
-runSqlRaw :: (ML e m, GConn db) => db -> [SqlValue] -> Text -> m [HRet]
-runSqlRaw db hs sql = withDB db $ \cany -> runSqlRawI "runSqlRaw" cany hs sql
+runSqlRaw :: (ML e m, GConn db) => db -> [SqlValue] -> Text -> m [ResultSet]
+runSqlRaw db hs sql = withDB db $ \conn -> runSqlRawI conn hs sql
 
 -- | 'runSqlRawI' runs an untyped query using an existing connection using 'withDB'
-runSqlRawI :: (ML e m) => String -> HConn db -> [SqlValue] -> Text -> m [HRet]
-runSqlRawI desc cany hs sql = do
-  let callback stmt i = do
-                          $logDebug [st|runSqlRawI: #{desc} callback i=#{i}|]
-                          liftIO (H.fetchAllRows' stmt)
-  $logDebug [st|runSqlRawI: #{desc} encoded hs=#{show hs}|]
-  runSqlImpl desc callback cany hs (T.unpack sql)
+runSqlRawI :: (ML e m) => HConn db -> [SqlValue] -> Text -> m [ResultSet]
+runSqlRawI conn hs sql = do
+  $logDebug [st|runSqlRawI: encoded hs=#{show hs}|]
+  runSqlImpl "runSqlRawI" id conn hs (T.unpack sql)
 
--- | 'runSqlRawCol' runs an untyped query with metadata
-runSqlRawCol :: (ML e m, GConn db) => db -> [SqlValue] -> Text -> m [HRetCol]
-runSqlRawCol db hs sql = withDB db $ \cany -> runSqlRawColI "runSqlRawCol" cany hs sql
-
--- | 'runSqlRawColI' runs an untyped query with metadata using an existing connection using 'withDB'
-runSqlRawColI :: ML e m => String -> HConn db -> [SqlValue] -> Text -> m [HRetCol]
-runSqlRawColI desc cany hs sql = do
-  let callback stmt i = do
-                          $logDebug [st|runSqlRawColI: #{desc} callback i=#{i}|]
-                          liftIO $ do
-                                      m <- H.describeResult stmt
-                                      r <- H.fetchAllRows' stmt
-                                      return (m,r)
-  $logDebug [st|runSqlRawColI: #{desc} encoded hs=#{show hs}|]
-  runSqlImpl desc callback cany hs (T.unpack sql)
-
--- | 'runSqlImpl' runs an untyped query where you pass in a callback that does the work
-runSqlImpl :: (ML e m, H.IConnection b) => String -> (H.Statement -> Int -> m ret) -> b -> [SqlValue] -> String -> m [Either Int ret]
+-- | 'runSqlImpl' runs an untyped query where you pass in a callback to pull out the values you want
+runSqlImpl :: (ML e m, H.IConnection b) => String -> (([(String, H.SqlColDesc)], [[SqlValue]]) -> ret) -> b -> [SqlValue] -> String -> m [Either Int ret]
 runSqlImpl desc callback conn ps sql = do
   -- dt <- liftIO getZonedTime
   $logDebug [st|runSqlImpl: running #{desc} sql=#{newline}#{sql}|]
   UE.bracket (liftIO $ H.prepare conn sql) (liftIO . H.finish) $ \stmt -> do
     rc <- liftIO $ H.execute stmt ps
     let go _ Nothing = return []
-        go !i (Just Nothing) = do
+        go !i (Just (Right meta)) = do
                         $logDebug [st|runSqlImpl: Result set! i=#{i}|]
-                        r <- callback stmt i
+                        rs <- liftIO $ H.fetchAllRows' stmt
+                        let r = callback (meta,rs)
 --                        $logDebug [st|runSqlImpl fetchAllRows' #{show r}|]
                         zz <- liftIO $ H.nextResultSet stmt
 --                        $logDebug [st|runSqlImpl nextResultSet' #{show zz}|]
                         yy <- go (i+1) zz
                         return $ Right r: yy
-        go !i (Just (Just n)) = do
+        go !i (Just (Left n)) = do
                         $logDebug [st|runSqlImpl: Update statement! ie rc==#{show n} i=#{i}|]
                         zz <- liftIO $ H.nextResultSet stmt
 --                        $logDebug [st|runSqlImpl nextResultSet' #{show zz}|]
                         yy <- go (i+1) zz
                         return $ Left n: yy
-    go 0 (Just rc)
+    go (0::Int) (Just rc)
 
 -- | 'runRawCol' just returns the metadata for the first resultset and ignores the rest used by TH
-runRawCol :: (ML e m, GConn db) => db -> [SqlValue] -> Text -> m [HMeta]
-runRawCol db hs sql = withDB db $ \cany -> runRawCol' "runRawCol" cany hs sql
+runRawCol :: (ML e m, GConn db) => db -> [SqlValue] -> Text -> m [RMeta]
+runRawCol db hs sql = withDB db $ \conn -> do
+  $logDebug [st|runRawCol:encoded hs=#{show hs}|]
+  runSqlMetaImpl True "runRawCol" conn hs (T.unpack sql)
 
--- still runs the query! so we still have to specify limit 0/top 0
-runRawCol' :: ML e m => String -> HConn db -> [SqlValue] -> Text -> m [HMeta]
-runRawCol' desc cany hs sql = do
-  $logDebug [st|runRawCol': #{desc} encoded hs=#{show hs}|]
-  runSqlMetaImpl True desc cany hs (T.unpack sql)
 
--- | 'runRawCol1' gets metadata for the first and only result set: used by TH
-runRawCol1 :: (ML e m, GConn db) => db -> [SqlValue] -> Text -> m HMeta
-runRawCol1 db hs sql = withDB db $ \cany -> runRawCol1' "runRawCol1" cany hs sql
-
--- still runs the query! so we still have to specify limit 0/top 0
-runRawCol1' :: ML e m => String -> HConn db -> [SqlValue] -> Text -> m HMeta
-runRawCol1' desc cany hs sql = do
-  $logDebug [st|runRawCol1': #{desc} encoded hs=#{show hs}|]
-  rs <- runSqlMetaImpl False desc cany hs (T.unpack sql)
-  case rs of
-    [r] -> return r
-    [] -> UE.throwIO $ GBException [st|runRawCol1': no resultset found|]
-    _:_:_ -> UE.throwIO $ GBException [st|runRawCol1': expected only one resultset but found #{length rs}: rs=#{show rs}|]
 
 -- | 'runSqlMetaImpl' returns the metadata
-runSqlMetaImpl :: (ML e m, H.IConnection b) => Bool -> String -> b -> [SqlValue] -> String -> m [HMeta]
+runSqlMetaImpl :: (ML e m, H.IConnection b) => Bool -> String -> b -> [SqlValue] -> String -> m [RMeta]
 runSqlMetaImpl domany desc conn ps sql = do
   $logDebug [st|runSqlMetaImpl: running #{desc} sql=#{newline}#{sql}|]
   UE.bracket (liftIO $ H.prepare conn sql) (liftIO . H.finish) $ \stmt -> do
     rc <- liftIO $ H.execute stmt ps
     let go _ Nothing = return []
-        go !(i::Int) (Just Nothing) = do
+        go !(i::Int) (Just (Right meta)) = do
                         $logDebug [st|runSqlImpl: Result set! i=#{i}|]
-                        r <- liftIO $ H.describeResult stmt
                         if domany then do
                           zz <- liftIO $ H.nextResultSet stmt
                           yy <- go (i+1) zz
-                          return (r:yy)
-                        else return [r]
-        go !i (Just (Just n)) =
+                          return (meta:yy)
+                        else return [meta]
+        go !i (Just (Left n)) =
                         UE.throwIO $ GBException [st|runSqlMetaImpl: Update not allowed! rc==#{show n} i=#{i}|]
     go 0 (Just rc)
 
@@ -293,12 +226,12 @@ runSqlMetaImpl domany desc conn ps sql = do
 withDB :: forall m e a b . (ML e m, GConn a) => a -> (HConn a -> m b) -> m b
 withDB db fn =
   bracketDB db $ \canyx ->
-    withTransaction canyx $ \cany -> fn cany
+    withTransaction canyx $ \conn -> fn conn
 
 -- | 'bracketDB' handles closing the connection. If there are errors then they are logged
 bracketDB :: (ML e m, GConn a) => a -> (HConn a -> m c) -> m c
 bracketDB db fn =
-  let ma = UE.bracket (HConn <$> liftIO (getconn db))
+  let ma = UE.bracket (HConn <$> liftIO (getConn db))
              (\c -> UE.handle (\(e :: H.SqlError) -> if ignoreDisconnectError (Just db) then
                                                         $logWarn [st|bracketDB: #{show e} db=#{showDb db}|]
                                                      else do
@@ -389,6 +322,18 @@ withTransaction conn func =
               -- exception can be re-raised
               UE.catch (liftIO $ H.rollback conn) doRollbackHandler
           doRollbackHandler (_ :: E.SomeException) = return ()
+
+-- | compares 2 lists based on a comparator
+divvyKeyed :: HasCallStack => (Ord x, Show a, Show b) => (Either a b -> x) -> [a] -> [b] -> [These a b]
+divvyKeyed xt tp1 tp2 =
+  let as = sortOn xt $ map Left tp1 <> map Right tp2
+      bs = groupBy (on (==) xt) as
+  in flip map bs $ \case
+      [Left a] -> This a
+      [Right a] -> That a
+      [Left a, Right b] -> These a b
+      [Right a, Left b] -> These b a
+      o -> error $ "divvyKeyed: xt function returned duplicates! (are your keys unique?) " ++ show o
 
 -- | 'compareDatabase' compares tables in two databases by name and count of rows. in A and in B / in A only / in B only -- ie These
 compareDatabase :: (GConn a, GConn b, ML e m) => a -> b -> m [These (Table a, Int) (Table b, Int)]
@@ -575,11 +520,11 @@ getDBInsertSql meta tgttable =
 
 getOneTableRowCount :: forall m db e . (GConn db, ML e m) => db -> Table db -> m Int
 getOneTableRowCount anydb table =
-  ext <$> runSql anydb RNil (mkSql ("getOneTableRowCount " ++ show table) [st|select count(*) from #{table}|] :: Sql db '[] '[SelOne Int])
+  ext <$> runSql anydb RNil (mkSql [st|getOneTableRowCount #{table}|] [st|select count(*) from #{table}|] :: Sql db '[] '[SelOne Int])
 
 getOneTableRowCount' :: (GConn db, ML e m) => db -> Sql db a b -> m Int
 getOneTableRowCount' anydb sql =
-  ext <$> runSql anydb RNil (mkSql ("getOneTableRowCount' " ++ show (_sSql sql)) [st|select count(*) from #{_sSql sql}|] :: Sql db '[] '[SelOne Int])
+  ext <$> runSql anydb RNil (mkSql ("getOneTableRowCount' " <> _sSql sql) [st|select count(*) from #{_sSql sql}|] :: Sql db '[] '[SelOne Int])
 
 newtype LogId = LogId { unLogId :: Int } deriving (Show,Eq,Num,Enum,ToText)
 
@@ -625,7 +570,7 @@ prtFieldDiff tab =
     That (_,t) -> [st|Right only #{cName t} #{cType t}|]
 
 defaultCompareData :: [Text] -> [Text] -> [(Text, Text)]
-defaultCompareData xs ys = map dupe (intersectBy (on (==) T.toLower) xs ys)
+defaultCompareData xs ys = map (\x -> (x,x)) (intersectBy (on (==) T.toLower) xs ys)
 
 removeKeys :: [Text] -> [(Text, Text)] -> [(Text, Text)]
 removeKeys (map (T.strip . T.toLower) -> cs) tps =
@@ -640,7 +585,15 @@ compareTableDataBoth db t1 t2 cmp = do
   ys <- compareTableData db t2 t1 cmp
   return (xs <> ys)
 
-compareTableData :: forall m e db . (GConn db, ML e m) => db -> Table db -> Table db -> ([Text] -> [Text] -> [(Text, Text)]) -> m [[SqlValue]]
+compareTableData :: forall m e db
+  . (GConn db, ML e m)
+  => db
+  -> Table db
+  -> Table db
+  -> ([Text]
+  -> [Text]
+  -> [(Text, Text)])
+  -> m [[SqlValue]]
 compareTableData db t1 t2 cmp = do
   when (t1==t2) $ UE.throwIO $ GBException [st|compareTableData comparing the same tables t1==t2 t1=#{t1} t2=#{t2}|]
   let ff tab = do
@@ -649,7 +602,7 @@ compareTableData db t1 t2 cmp = do
   c1 <- ff t1
   c2 <- ff t2
   let (fs1,fs2) = (T.intercalate "," *** T.intercalate ",") (unzip (cmp c1 c2))
-  xs <- ext <$> runSql db RNil (mkSql ("compareTableData " ++ show (t1,t2)) [st|select #{fs1} from #{t1} except select #{fs2} from #{t2}|] :: Sql db '[] '[SelRaw])
+  xs <- ext <$> runSql db RNil (mkSql [st|compareTableData #{show (t1,t2)}|] [st|select #{fs1} from #{t1} except select #{fs2} from #{t2}|] :: Sql db '[] '[SelRaw])
   if null xs then $logInfo [st|compareTableData #{t1} #{t2} is good!!|]
   else $logError [st|compareTableData #{t1} #{t2} is bad!! len=#{length xs}|]
   return xs

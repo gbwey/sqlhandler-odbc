@@ -20,6 +20,8 @@ Implementation of GConn for sqlite.
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS -Wall #-}
 module DBSqlite where
 import Prelude hiding (FilePath)
@@ -29,41 +31,41 @@ import qualified Data.Text as T
 import Data.Text.Lazy.Builder (fromText)
 import GConn
 import Data.Char
-import System.FilePath
+import System.IO
 import Sql
 import GHC.Generics (Generic)
 import Control.Lens.TH
-import Util
-import qualified Data.Configurator as C
 import Language.Haskell.TH hiding (Dec)
+import Dhall hiding (maybe,string)
+import Logging (genericAutoZ)
+import qualified Language.Haskell.TH.Syntax as TH
 
-data DBSqlite a = DBSqlite { _driverdsn :: !Text
-                           , _liteschema :: !(Maybe Text)
-                           , _dbfn :: !FilePath
-                           } deriving (Show, Eq, Generic)
+data DBSqlite a = DBSqlite { _s3driverdsn :: !Text
+                           , _s3schema :: !(Maybe Text)
+                           , _s3fn :: !FilePath
+                           } deriving (TH.Lift, Show, Eq, Generic)
 
 makeLenses ''DBSqlite
 
+instance Interpret (DBSqlite a) where
+  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
+
 instance ToText (DBSqlite a) where
-  toText x = fromText $ maybe "" (<> ".") (_liteschema x) <> T.pack (_dbfn x)
+  toText x = fromText $ maybe "" (<> ".") (_s3schema x) <> T.pack (_s3fn x)
 
 type instance WriteableDB (DBSqlite Writeable) = 'True
 
 instance GConn (DBSqlite a) where
   loadConnTH _ k = do
-    c <- runIO loadFromConfig
-    driver <- runIO $ req c (k <> ".driver")
-    mschema <- runIO $ C.lookup c (k <> ".schema")
-    fn <- runIO $ req c (k <> ".fn")
-    let schemasplice = maybe [| Nothing |] (\x -> [| Just $(stringE x) |]) mschema
-    [| DBSqlite $(stringE driver) $(schemasplice) $(stringE fn) |]
+    c <- runIO $ loadConn @(DBSqlite a) k
+    TH.lift c
 
   ignoreDisconnectError _ = True
-  connText DBSqlite {..} = [st|#{_driverdsn};Database=#{_dbfn};|] -- ;TraceFile=d:\haskell\s.log;|]
+  connText DBSqlite {..} = [st|#{_s3driverdsn};Database=#{_s3fn};|] -- ;TraceFile=d:\haskell\s.log;|]
   connCSharpText DBSqlite {..} = undefined
-  showDb DBSqlite {..} = [st|sqlite db=#{_dbfn}|]
+  showDb DBSqlite {..} = [st|sqlite db=#{_s3fn}|]
   getSchema = const Nothing
-  getDb = Just . T.pack . _dbfn
+  getDb = Just . T.pack . _s3fn
   getDelims _ = Just ('"','"')
   getAllTablesSql _ = mkSql "getAllTablesSql sqlite" [st|
      SELECT '.' || name FROM sqlite_master WHERE type='table'
