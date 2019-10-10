@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d6f5de980d89eac31d60715f656e5f088f9c8eb1da08cf5a6adb93865d51a9fa
+-- hash: 68669bd291ada6dd67fc690c8db857d8acbfb551eb3a0138912382f0e5d54fa2
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -70,6 +70,7 @@ library
     , containers
     , dhall
     , directory
+    , either
     , formatting
     , generics-sop
     , ghc-prim
@@ -81,6 +82,7 @@ library
     , predicate-typed
     , regex-applicative
     , resourcet
+    , safe
     , semigroups
     , shakespeare
     , sqlhandler
@@ -120,6 +122,7 @@ test-suite spec
     , dhall
     , directory
     , easytest
+    , either
     , formatting
     , generics-sop
     , ghc-prim
@@ -132,6 +135,7 @@ test-suite spec
     , predicate-typed
     , regex-applicative
     , resourcet
+    , safe
     , semigroups
     , shakespeare
     , sqlhandler

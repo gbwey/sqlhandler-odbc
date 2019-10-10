@@ -114,7 +114,7 @@ getlen o = error $ "getlen: unknown type=" ++ show o
 -- https://markkarpov.com/tutorial/th.html#typed-expressions
 --   It appears that returning something polymorphic is not yet possible! so have to use genConn
 -- | generates a database connection adt from the given parameters
--- uses 'fn' as the key into the db.cfg file
+-- uses the corresponding key into the conn.dhall configuration file
 genConn :: forall db a . GConn (db a) => String -> TH.Name -> Q [TS.Dec]
 genConn key nn = do
   z <- loadConnTH (Proxy @(db a)) (T.pack key)
@@ -126,9 +126,6 @@ genConn key nn = do
 -- $(genConn @DBMY "myW" ''Writeable)
 -- myW :: DBMY Writeable
 -- myW = $$(genConn1 @DBMY @Writeable)
-
--- | generates a database connection adt from the given parameters
--- uses 'fn' as the key into the db.cfg file
 {-
 genConn1 :: forall db a . GConn (db a) => String -> Q (TS.TExp (db a))
 genConn1 key = do
@@ -138,7 +135,7 @@ genConn1 key = do
 -- myW = $$(genConn2 @(DBMY Writeable))
 -- no support for polymorphic types: will default to Any which is not what you want
 -- | generates a database connection adt from the given parameters
--- uses 'fn' as the key into the db.cfg file
+-- uses the corresponding key into the conn.dhall
 genConn2 :: forall db . GConn db => String -> Q (TS.TExp db)
 genConn2 key = do
   z <- loadConnTH (Proxy @db) (T.pack key)
@@ -299,4 +296,4 @@ genTypeFirst' sel fn db sqlfn = do
 
 -- todo: make this a sql parser
 countBinders :: Text -> Int
-countBinders = T.length . T.filter (=='?') 
+countBinders = T.length . T.filter (=='?')
