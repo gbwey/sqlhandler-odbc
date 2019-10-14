@@ -1,4 +1,4 @@
-# sqlhandler-odbc 
+# sqlhandler-odbc
 ## database package using [hdbc-odbc](https://github.com/gbwey/hdbc-odbc)
 
 * write native SQL for Postgres/MSSQL/Oracle/MySql/Sqlite using the ODBC protocol
@@ -7,7 +7,7 @@
 * supports multiple resultsets where supported, i.e. MSSQL and Postgres
 * optional template haskell methods for generating type safe signatures from SQL metadata
 * optional template haskell methods to generate database connections using configuration file conn.dhall
-* supports configurable logging 
+* supports configurable logging
 * supports a configurable pretty printer of SQL results in table format leveraging SQL metadata
 * can mark your queries or connections as ReadOnly which is enforced at compile time
 * supports streaming queries using conduit combinators

@@ -2,7 +2,7 @@
 Module      : DBSqlite
 Description : Sqlite
 Copyright   : (c) Grant Weyburne, 2016
-License     : GPL-3
+License     : BSD-3
 Maintainer  : gbwey9@gmail.com
 
 Implementation of GConn for sqlite.

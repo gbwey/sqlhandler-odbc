@@ -16,7 +16,7 @@
 Module      : DBOracle
 Description : Oracle
 Copyright   : (c) Grant Weyburne, 2016
-License     : GPL-3
+License     : BSD-3
 Maintainer  : gbwey9@gmail.com
 
 Implementation of GConn for oracle.
@@ -80,7 +80,7 @@ instance GConn (DBOracle a) where
     TH.lift c
 
 -- ;FWC=T;StatementCache=T;
-  connText DBOracle {..} = 
+  connText DBOracle {..} =
     case _orConnType of
       TnsName driverdsn tns -> [st|#{driverdsn}; dbq=#{tns}; Uid=#{_oruid}; Pwd=#{unSecret _orpwd};|]
       DsnOracle dsn -> [st|DSN=#{dsn}; Uid=#{_oruid}; Pwd=#{unSecret _orpwd};|]

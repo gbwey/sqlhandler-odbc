@@ -22,7 +22,7 @@
 Module      : GConn
 Description : Contains GConn class
 Copyright   : (c) Grant Weyburne, 2016
-License     : GPL-3
+License     : BSD-3
 Maintainer  : gbwey9@gmail.com
 
 Each database type needs to implement GConn

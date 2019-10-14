@@ -26,7 +26,7 @@
 Module      : DBConn
 Description : Contains methods for running sql against databases
 Copyright   : (c) Grant Weyburne, 2016
-License     : GPL-3
+License     : BSD-3
 Maintainer  : gbwey9@gmail.com
 
 Generic methods for running sql / comparing databases / printing and logging.

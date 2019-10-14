@@ -15,7 +15,7 @@
 Module      : Sql_TH
 Description : Template haskell for generating Sql and Sql signatures
 Copyright   : (c) Grant Weyburne, 2016
-License     : GPL-3
+License     : BSD-3
 Maintainer  : gbwey9@gmail.com
 
 This is very experimental

@@ -17,7 +17,7 @@
 Module      : DBFrame
 Description : Convenience methods for reading and writing a frame to a database
 Copyright   : (c) Grant Weyburne, 2016
-License     : GPL-3
+License     : BSD-3
 Maintainer  : gbwey9@gmail.com
 -}
 module DBFrame where
@@ -63,12 +63,12 @@ insertFrameSql tab _ =
   in mkSql [st|insertFrameSql #{tab}|] [st|insert into #{tt} (#{flds}) values#{qqsn len}|]
 
 -- | 'insertFrameLoad' loads a table with the frame using the names and types from the frame
-insertFrameLoad :: forall db m e rs t 
+insertFrameLoad :: forall db m e rs t
    . (Foldable t, ML e m, ToMetas rs, DefEnc (Rec Enc (Unlabeled rs)), F.ColumnHeaders rs, RecordToList (Unlabeled rs), ReifyConstraint Show V.Identity (Unlabeled rs), StripFieldNames rs, RMap (Unlabeled rs), GConnWrite db)
     => CreateTable
     -> db
     -> Table db
-    -> t (F rs) 
+    -> t (F rs)
     -> m ()
 insertFrameLoad cre db tab ff = do
   case cre of
