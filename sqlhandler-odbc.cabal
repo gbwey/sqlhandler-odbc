@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 68669bd291ada6dd67fc690c8db857d8acbfb551eb3a0138912382f0e5d54fa2
+-- hash: ecc59bda3b31f0790819b881dd029792b0027745153369271301ed19fcfe51a9
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -121,7 +121,6 @@ test-suite spec
     , containers
     , dhall
     , directory
-    , easytest
     , either
     , formatting
     , generics-sop
@@ -141,6 +140,9 @@ test-suite spec
     , sqlhandler
     , sqlhandler-odbc
     , tagged
+    , tasty
+    , tasty-hunit
+    , tasty-quickcheck
     , template-haskell
     , text
     , these

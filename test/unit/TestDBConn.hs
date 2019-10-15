@@ -1,4 +1,3 @@
--- code for running against test databases
 {-# OPTIONS -Wall #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -7,7 +6,10 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 module TestDBConn where
+import Test.Tasty
+import Test.Tasty.HUnit
 import DBConn
 import GConn
 import DBPG
@@ -16,19 +18,23 @@ import DBOracle
 import Sql
 import Data.Proxy
 import Data.Functor
-import EasyTest
 
-suite :: Test ()
-suite = tests
-  [ scope "insertTable.ex1" $ expectEq (insertTableSqlPrivate @(DBMS _) (1,5) "fred") ("insert into [fred] values (?,?,?,?,?)", 5)
-  , scope "insertTable.ex2" $ expectEq (insertTableSqlPrivate @(DBMS _) (2,5) "dbo.fred") ("insert into dbo.[fred] values (?,?,?,?,?), (?,?,?,?,?)", 10)
-  , scope "insertTable.ex3" $ expectEq (insertTableSqlPrivate @(DBPG _) (2,5) "fred") ("insert into \"fred\" values (?,?,?,?,?), (?,?,?,?,?)", 10)
-  , scope "insertTable.ex4" $ expectEq (insertTableSqlPrivate @(DBOracle _) (3,3) "fred") ("insert into \"fred\" values (?,?,?), (?,?,?), (?,?,?)", 9)
-  , scope "parseTableLR.ex1" $ expectEq (parseTableLR @(DBMS _) "aaa.bbb.[c]") (Right (Table (Just "aaa") (Schema (Just "bbb")) "c" True))
-  , scope "parseTableLR.ex2" $ void $ expectLeft (parseTableLR @(DBMS _) "c")
-  , scope "parseTableLR.ex3" $ expectEq (parseTableLR @(DBPG _) "x.\"abc\"") (Right (Table Nothing (Schema (Just "x")) "abc" True))
-  , scope "escapeField.ex1" $ expectEq (escapeField (Proxy @(DBMS _)) "fred") "[fred]"
-  , scope "escapeField.ex2" $ expectEq (escapeField (Proxy @(DBPG _)) "fred") "\"fred\""
-  , scope "escapeField.ex3" $ expectEq (escapeField (Proxy @(DBOracle _)) "fred") "\"fred\""
+suite :: IO ()
+suite = defaultMain $ testGroup "TestDBConn"
+  [ testCase "insertTable.ex1" $ (@?=) (insertTableSqlPrivate @(DBMS _) (1,5) "fred") ("insert into [fred] values (?,?,?,?,?)", 5)
+  , testCase "insertTable.ex2" $ (@?=) (insertTableSqlPrivate @(DBMS _) (2,5) "dbo.fred") ("insert into dbo.[fred] values (?,?,?,?,?), (?,?,?,?,?)", 10)
+  , testCase "insertTable.ex3" $ (@?=) (insertTableSqlPrivate @(DBPG _) (2,5) "fred") ("insert into \"fred\" values (?,?,?,?,?), (?,?,?,?,?)", 10)
+  , testCase "insertTable.ex4" $ (@?=) (insertTableSqlPrivate @(DBOracle _) (3,3) "fred") ("insert into \"fred\" values (?,?,?), (?,?,?), (?,?,?)", 9)
+  , testCase "parseTableLR.ex1" $ (@?=) (parseTableLR @(DBMS _) "aaa.bbb.[c]") (Right (Table (Just "aaa") (Schema (Just "bbb")) "c" True))
+  , testCase "parseTableLR.ex2" $ void $ expectLeft (parseTableLR @(DBMS _) "c")
+  , testCase "parseTableLR.ex3" $ (@?=) (parseTableLR @(DBPG _) "x.\"abc\"") (Right (Table Nothing (Schema (Just "x")) "abc" True))
+  , testCase "escapeField.ex1" $ (@?=) (escapeField (Proxy @(DBMS _)) "fred") "[fred]"
+  , testCase "escapeField.ex2" $ (@?=) (escapeField (Proxy @(DBPG _)) "fred") "\"fred\""
+  , testCase "escapeField.ex3" $ (@?=) (escapeField (Proxy @(DBOracle _)) "fred") "\"fred\""
   ]
+
+expectLeft :: Show b => Either a b -> IO ()
+expectLeft = \case
+  Left _ -> pure ()
+  Right e -> assertFailure $ "expected Left but found Right " ++ show e
 

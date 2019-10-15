@@ -2,8 +2,6 @@ flags: {}
 extra-package-dbs: []
 packages:
 - location: '.'
-- location: ../easytest
-  extra-dep: true
 - location: ../logging
   extra-dep: true
 - location: ../hdbc

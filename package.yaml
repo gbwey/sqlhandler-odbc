@@ -90,7 +90,9 @@ tests:
       - sqlhandler-odbc
       - hspec
       - QuickCheck
-      - easytest
+      - tasty
+      - tasty-hunit
+      - tasty-quickcheck
     other-modules:
     - TestConnections
     - TestSqlite_TH
