@@ -10,12 +10,12 @@
 module TestDBConn where
 import Test.Tasty
 import Test.Tasty.HUnit
-import DBConn
+--import DBConn
 import GConn
 import DBPG
 import DBMSSQL
 import DBOracle
-import Sql
+--import Sql
 import Data.Proxy
 import Data.Functor
 
