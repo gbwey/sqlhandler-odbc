@@ -53,7 +53,9 @@ dependencies:
 - tagged
 - template-haskell
 - text
-- these
+- these >= 1.0
+- these-lens
+- semialign
 - time
 - typelevel
 - unix-time >= 0.4.6

@@ -16,19 +16,19 @@
 * supports [predicates](https://github.com/gbwey/predicate) for the SQL output which if fails then will log where the failure occurred and rollback the transaction
 
 * log.dhall has the logging configuration
-* conn.dhall has database connections for use in template haskell and testing
-  -- by default there is an entry for sqlite3 using a test database s3.db
-
-
-
-```text
+* conn.dhall has database connections for use in template haskell and testing\
+  fill in the odbc driver information for the database connections that you want to use
+    
+```haskell
 stack ghci --test
 :l test\integration\TestSqlite_TH.hs test\integration\TestConnections.hs
+```
 
--- run an untyped query
--- s3W is a sqlite3 connection
--- [] means no input parameters
+* run an untyped query
+* s3W is a sqlite3 connection
+* [] means no input parameters
 
+```haskell
 >a <- fd $ runSqlRaw s3W [] "select 10 as age, 'abcd' as name union select 20,'xyz'"
 
 >wprint a
@@ -64,7 +64,9 @@ stack ghci --test
 +------------------------------------------------+
 
 it :: ()
+```
 
+```haskell
 -- run a typed query using refinement types
 >a <- fd $ runSql s3W RNil s3_test1
 

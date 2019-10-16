@@ -1,5 +1,6 @@
 -- using getPGTableCountsSql instead for counts of tables cos no roundtripping needed and is fast!
 -- multiple resultsets work great with postgres
+{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -17,7 +18,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
-{-# OPTIONS -Wall #-}
 {- |
 Module      : DBPG
 Description : Postgres

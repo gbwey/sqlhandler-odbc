@@ -29,6 +29,10 @@ extra-deps:
 - dhall-1.26.0
 - th-lift-instances-0.1.14
 - th-lift-0.8.0.1
+- these-1.0.1
+- semialign-1
+- assoc-1
+- these-lens-1
 
 arch: x86_64
 resolver: lts-13.25

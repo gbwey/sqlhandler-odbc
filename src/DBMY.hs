@@ -1,5 +1,6 @@
 -- multiple result sets work with semicolon delimiters but cant get them to work when using placeholders ie ?
 -- they work with inserts selects etc!!! ;option=67108864 [[without placeholders only!]]
+{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -15,7 +16,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
-{-# OPTIONS -Wall #-}
 {- |
 Module      : DBMY
 Description : MySql

@@ -1,5 +1,6 @@
 -- could generate insert statements based on metadata (skip identity computed fields etc) and refined types on columns (not so useful as the data is dynamic)
 -- add filter on column names and column type
+{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DataKinds #-}

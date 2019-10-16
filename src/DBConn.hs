@@ -1,6 +1,7 @@
+{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
+-- {-# OPTIONS -Wno-redundant-constraints #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
@@ -20,8 +21,6 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
 -- {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
--- {-# OPTIONS -Wno-redundant-constraints #-}
 {- |
 Module      : DBConn
 Description : Contains methods for running sql against databases
@@ -351,7 +350,7 @@ compareDatabaseImpl p1 p2 db1 db2 = do
 
 compareIt :: (GConn a, GConn b) => [These (Table a, Int) (Table b, Int)] -> [TL.Text]
 compareIt tps =
-  let (bb, (ll, rr)) = partitionThese tps
+  let (ll, rr, bb) = partitionThese tps
       (oks, errs) = partition (uncurry (==) . (snd *** snd)) bb
       (lterrs,gterrs) = partition (uncurry (<) . (snd *** snd)) errs
       padn :: GConn x => Table x -> TL.Text

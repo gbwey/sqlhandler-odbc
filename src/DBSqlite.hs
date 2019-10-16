@@ -7,6 +7,7 @@ Maintainer  : gbwey9@gmail.com
 
 Implementation of GConn for sqlite.
 -}
+{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -22,7 +23,6 @@ Implementation of GConn for sqlite.
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
-{-# OPTIONS -Wall #-}
 module DBSqlite where
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
