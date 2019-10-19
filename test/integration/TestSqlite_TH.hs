@@ -45,7 +45,7 @@ $(genSql "s3_4" s3W (const "select count(*) as cnt1 from mixed"))
 s3_3TEST :: Sql (DBSqlite a) '[] '[Sel (Int,Double,UTCTime,String)]
 s3_3TEST = mkSql' "select * from mixed"
 
-s3_3TEST1 :: Sql (DBSqlite a) '[] '[Sel (Int, Refined (Ceiling Int >> Between 0 500) Double, UTCTime, String)]
+s3_3TEST1 :: Sql (DBSqlite a) '[] '[Sel (Int, Refined (Ceiling Int Id >> Between 0 500) Double, UTCTime, String)]
 s3_3TEST1 = mkSql' "select * from mixed"
 
 s3_CARD :: Sql (DBSqlite a) '[] '[Sel (Int, String, MakeR3 (Ccn '[4,4,3]), MakeR3 (BaseN 16), MakeR3 DateTimeN)]
