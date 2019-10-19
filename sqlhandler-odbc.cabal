@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ecc59bda3b31f0790819b881dd029792b0027745153369271301ed19fcfe51a9
+-- hash: e447be843927c67e450ad11a0bbd21d7c3ad32f4c6ff36e1c45fbc9ca886724c
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -83,13 +83,15 @@ library
     , regex-applicative
     , resourcet
     , safe
+    , semialign
     , semigroups
     , shakespeare
     , sqlhandler
     , tagged
     , template-haskell
     , text
-    , these
+    , these >=1.0
+    , these-lens
     , time
     , typelevel
     , unix-time >=0.4.6
@@ -135,6 +137,7 @@ test-suite spec
     , regex-applicative
     , resourcet
     , safe
+    , semialign
     , semigroups
     , shakespeare
     , sqlhandler
@@ -145,7 +148,8 @@ test-suite spec
     , tasty-quickcheck
     , template-haskell
     , text
-    , these
+    , these >=1.0
+    , these-lens
     , time
     , typelevel
     , unix-time >=0.4.6
