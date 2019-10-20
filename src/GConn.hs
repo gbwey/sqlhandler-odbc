@@ -50,11 +50,11 @@ import qualified GHC.Generics as G
 import GHC.Stack
 import Data.Vinyl
 import qualified Language.Haskell.TH as TH
-import Dhall hiding (maybe,string)
+import Dhall hiding (maybe,string,map)
 import Data.List
 import Data.Char
 
-loadConn :: forall a . Interpret a => Text -> IO a
+loadConn :: forall a . FromDhall a => Text -> IO a
 loadConn key = input auto ("let x = ./conn.dhall in x." <> key)
 
 data Writeable

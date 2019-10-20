@@ -36,7 +36,7 @@ import Sql
 import GHC.Generics (Generic)
 import Control.Lens.TH
 import Language.Haskell.TH hiding (Dec)
-import Dhall hiding (maybe,string)
+import Dhall hiding (maybe,string,map)
 import Logging (genericAutoZ)
 import qualified Language.Haskell.TH.Syntax as TH
 
@@ -47,7 +47,7 @@ data DBSqlite a = DBSqlite { _s3driverdsn :: !Text
 
 makeLenses ''DBSqlite
 
-instance Interpret (DBSqlite a) where
+instance FromDhall (DBSqlite a) where
   autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
 
 instance ToText (DBSqlite a) where

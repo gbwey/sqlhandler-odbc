@@ -40,13 +40,13 @@ import GHC.Generics (Generic)
 import Control.Lens.TH
 import Language.Haskell.TH.Syntax -- (Lift)
 import qualified Language.Haskell.TH.Syntax as TH
-import Dhall hiding (maybe,string)
+import Dhall hiding (maybe,string,map)
 import Logging
 
 data MSAuthn = Trusted | UserPwd { _msUser :: Text, _msPassword :: Secret }
   deriving (TH.Lift, Show, Eq, Generic)
 
-instance Interpret MSAuthn where
+instance FromDhall MSAuthn where
   autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
 
 data DBMS a = DBMS {
@@ -58,7 +58,7 @@ data DBMS a = DBMS {
 
 makeLenses ''DBMS
 
-instance Interpret (DBMS a) where
+instance FromDhall (DBMS a) where
   autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
 
 type instance WriteableDB (DBMS Writeable) = 'True

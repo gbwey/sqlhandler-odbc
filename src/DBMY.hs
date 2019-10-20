@@ -38,7 +38,7 @@ import GHC.Generics (Generic)
 import Control.Lens.TH
 import qualified Language.Haskell.TH.Syntax as TH
 import Language.Haskell.TH hiding (Dec)
-import Dhall hiding (maybe,string)
+import Dhall hiding (maybe,string,map)
 import Logging
 
 data DBMY a = DBMY { _mydriverdsn :: !Text
@@ -51,7 +51,7 @@ data DBMY a = DBMY { _mydriverdsn :: !Text
 
 makeLenses ''DBMY
 
-instance Interpret (DBMY a) where
+instance FromDhall (DBMY a) where
   autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
 
 type instance WriteableDB (DBMY Writeable) = 'True

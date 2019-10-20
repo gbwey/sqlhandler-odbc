@@ -36,7 +36,7 @@ import GHC.Stack
 import GHC.Generics (Generic)
 import Control.Lens.TH
 import Language.Haskell.TH.Syntax
-import Dhall hiding (maybe,string)
+import Dhall hiding (maybe,string,map)
 import qualified Dhall as D
 import Logging
 import qualified Language.Haskell.TH.Syntax as TH
@@ -44,7 +44,7 @@ import qualified Language.Haskell.TH.Syntax as TH
 data OracleConnType = TnsName { _ocdriver :: !Text, _octns :: !Text } | DsnOracle !Text
   deriving (TH.Lift, Show, Generic)
 
-instance Interpret OracleConnType where
+instance FromDhall OracleConnType where
   autoWith _ = toOCT
 
 -- union of a record and a single constructor
@@ -63,7 +63,7 @@ data DBOracle a = DBOracle { _orConnType :: OracleConnType
 
 makeLenses ''DBOracle
 
-instance Interpret (DBOracle a) where
+instance FromDhall (DBOracle a) where
   autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
 
 type instance WriteableDB (DBOracle Writeable) = 'True

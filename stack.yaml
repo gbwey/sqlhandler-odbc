@@ -25,7 +25,7 @@ extra-deps:
 - Frames-0.6.1
 - symbols-0.3.0.0
 - discrimination-0.4
-- dhall-1.26.0
+- dhall-1.27.0
 - these-lens-1
 - smtp-mail-0.2.0.0
 

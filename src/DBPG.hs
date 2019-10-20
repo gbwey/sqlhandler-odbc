@@ -39,7 +39,7 @@ import Control.Arrow
 import GHC.Generics (Generic)
 import Control.Lens.TH
 import Language.Haskell.TH.Syntax
-import Dhall hiding (maybe,string)
+import Dhall hiding (maybe,string,map)
 import Logging
 import qualified Language.Haskell.TH.Syntax as TH
 
@@ -55,7 +55,7 @@ data DBPG a = DBPG {
 
 makeLenses ''DBPG
 
-instance Interpret (DBPG a) where
+instance FromDhall (DBPG a) where
   autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
 
 type instance WriteableDB (DBPG Writeable) = 'True
