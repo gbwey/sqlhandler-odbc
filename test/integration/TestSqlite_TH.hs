@@ -59,7 +59,7 @@ s3_CARD2 = mkSql' "select * from cardinfo where id <> 7"
 
 type DateTimeN1 =
   '(ParseTimeP UTCTime "%Y-%m-%d %H:%M:%S" Id, 'True,
-    FormatTimeP "%Y-%m-%d %H:%M:%S", String)
+    FormatTimeP "%Y-%m-%d %H:%M:%S" Id, String)
 
 s3_test1 :: Sql (DBSqlite a) '[] '[Sel (MakeR3 (FromSeconds UTCTime), MakeR3 Ssn)]
 s3_test1 = mkSql' "select 1546304461 as seconds, '123-34-2224' as ssn union all select 0, '123-12-2222'"
@@ -86,7 +86,7 @@ union all select '6433-1000-006', 'ffff', 'September 18 2012 23:01:03', '1111010
   |]
 
 
-type FromSeconds (t :: Type) = '(ShowP >> ParseTimeP t "%s" Id, 'True, FormatTimeP "%s" >> ReadP Integer, Integer)
+type FromSeconds (t :: Type) = '(ShowP >> ParseTimeP t "%s" Id, 'True, FormatTimeP "%s" Id >> ReadP Integer, Integer)
 {-
 :l test\integration\TestSqlite_TH.hs test\integration\TestConnections.hs
 a <- fd $ runSql s3W RNil s3_CARD
