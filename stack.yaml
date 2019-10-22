@@ -20,11 +20,10 @@ packages:
   extra-dep: true
 extra-deps:
 - pretty-terminal-0.1.0.0
-- pretty-tree-0.1.0.0
 - tree-view-0.5
 - Frames-0.6.1
-- symbols-0.3.0.0
 - discrimination-0.4
+- symbols-0.3.0.0
 - dhall-1.27.0
 - these-lens-1
 - smtp-mail-0.2.0.0
