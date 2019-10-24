@@ -86,7 +86,7 @@ union all select '6433-1000-006', 'ffff', 'September 18 2012 23:01:03', '1111010
   |]
 
 
-type FromSeconds (t :: Type) = '(ShowP >> ParseTimeP t "%s" Id, 'True, FormatTimeP "%s" Id >> ReadP Integer, Integer)
+type FromSeconds (t :: Type) = '(ShowP Id >> ParseTimeP t "%s" Id, 'True, FormatTimeP "%s" Id >> ReadP Integer, Integer)
 {-
 :l test\integration\TestSqlite_TH.hs test\integration\TestConnections.hs
 a <- fd $ runSql s3W RNil s3_CARD

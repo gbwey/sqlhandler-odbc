@@ -137,7 +137,7 @@ tableParser mdelims = fmap (\(ma,b,c) -> ( fmap T.pack ma
 
 tableParser' :: RE Char (Maybe String,String,String)
 tableParser' = (,,)
-    <$> optional (some (psym isAlphaNum) <*  sym '.')
+    <$> optional (some (psym (\c -> isAlphaNum c || c `elem` ("_-$%?" :: String))) <*  sym '.')
     <*> many (psym isAlphaNum)
     <*  sym '.'
     <*> some anySym
