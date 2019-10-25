@@ -27,18 +27,18 @@ flags:
     default: no
 
 dependencies:
-- Frames
-- HDBC == 2.4.0.3
-- HDBC-odbc == 2.5.0.2
 - bytestring
 - containers
-- dhall
+- dhall >= 1.27.0
 - directory
 - either
 - safe
 - formatting
+- Frames >= 0.6.1
 - generics-sop
 - ghc-prim
+- HDBC == 2.4.0.3
+- HDBC-odbc == 2.5.0.2
 - lens
 - logging
 - monad-logger
@@ -54,8 +54,6 @@ dependencies:
 - template-haskell
 - text
 - these >= 1.0
-- these-lens
-- semialign
 - time
 - typelevel
 - unix-time >= 0.4.6

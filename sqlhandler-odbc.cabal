@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e447be843927c67e450ad11a0bbd21d7c3ad32f4c6ff36e1c45fbc9ca886724c
+-- hash: 89e86609d69bc0173bf61c67f5c666eceae8158b33917e839a41999771eed4d2
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -62,13 +62,13 @@ library
       src
   ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fomit-interface-pragmas
   build-depends:
-      Frames
+      Frames >=0.6.1
     , HDBC ==2.4.0.3
     , HDBC-odbc ==2.5.0.2
     , base >=4.7 && <=5.1
     , bytestring
     , containers
-    , dhall
+    , dhall >=1.27.0
     , directory
     , either
     , formatting
@@ -83,7 +83,6 @@ library
     , regex-applicative
     , resourcet
     , safe
-    , semialign
     , semigroups
     , shakespeare
     , sqlhandler
@@ -91,7 +90,6 @@ library
     , template-haskell
     , text
     , these >=1.0
-    , these-lens
     , time
     , typelevel
     , unix-time >=0.4.6
@@ -114,14 +112,14 @@ test-suite spec
       test/unit
   ghc-options: -threaded -O0 -fomit-interface-pragmas
   build-depends:
-      Frames
+      Frames >=0.6.1
     , HDBC ==2.4.0.3
     , HDBC-odbc ==2.5.0.2
     , QuickCheck
     , base
     , bytestring
     , containers
-    , dhall
+    , dhall >=1.27.0
     , directory
     , either
     , formatting
@@ -137,7 +135,6 @@ test-suite spec
     , regex-applicative
     , resourcet
     , safe
-    , semialign
     , semigroups
     , shakespeare
     , sqlhandler
@@ -149,7 +146,6 @@ test-suite spec
     , template-haskell
     , text
     , these >=1.0
-    , these-lens
     , time
     , typelevel
     , unix-time >=0.4.6

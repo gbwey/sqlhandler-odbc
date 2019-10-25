@@ -25,7 +25,6 @@ extra-deps:
 - discrimination-0.4
 - symbols-0.3.0.0
 - dhall-1.27.0
-- these-lens-1
 - smtp-mail-0.2.0.0
 
 arch: x86_64
