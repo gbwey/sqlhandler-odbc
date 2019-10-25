@@ -43,7 +43,6 @@ dependencies:
 - logging
 - monad-logger
 - mtl
-- predicate
 - predicate-typed
 - regex-applicative
 - resourcet
@@ -53,7 +52,7 @@ dependencies:
 - tagged
 - template-haskell
 - text
-- these >= 1.0
+- these >= 1.0.0
 - time
 - typelevel
 - unix-time >= 0.4.6

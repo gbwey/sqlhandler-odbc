@@ -289,7 +289,7 @@ insertTableSqlAuto s =
   parseCreateTableSql s <&>
    \(tab,flds) r ->
       let (x,i) = insertTableSqlPrivate (r, sum (map cntField flds)) tab
-      in (Sql (_sDescription s) (_sEncoders s) (E1 (ueq r)) x, i)
+      in (Sql (_sDescription s) (_sEncoders s) (E1 UpdP) x, i)
 
 insertTableSqlPrivate :: GConn db => (Int,Int) -> Table db -> (Text, Int)
 insertTableSqlPrivate (r,c) tab =

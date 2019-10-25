@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 89e86609d69bc0173bf61c67f5c666eceae8158b33917e839a41999771eed4d2
+-- hash: fbdee13fe5acbf98e5fcaa119d3e9259f01e4ae31857d08e685119aa2534c384
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -78,7 +78,6 @@ library
     , logging
     , monad-logger
     , mtl
-    , predicate
     , predicate-typed
     , regex-applicative
     , resourcet
@@ -89,7 +88,7 @@ library
     , tagged
     , template-haskell
     , text
-    , these >=1.0
+    , these >=1.0.0
     , time
     , typelevel
     , unix-time >=0.4.6
@@ -130,7 +129,6 @@ test-suite spec
     , logging
     , monad-logger
     , mtl
-    , predicate
     , predicate-typed
     , regex-applicative
     , resourcet
@@ -145,7 +143,7 @@ test-suite spec
     , tasty-quickcheck
     , template-haskell
     , text
-    , these >=1.0
+    , these >=1.0.0
     , time
     , typelevel
     , unix-time >=0.4.6

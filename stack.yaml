@@ -10,8 +10,6 @@ packages:
   extra-dep: true
 - location: ../table-layout
   extra-dep: true
-- location: ../predicate
-  extra-dep: true
 - location: ../typelevel
   extra-dep: true
 - location: ../predicate-typed

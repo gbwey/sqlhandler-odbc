@@ -129,7 +129,7 @@ decColumnMetaSqlite = fmap f defDec
              (if tispk then 1 else 0)
 
 getSLColumnMetaSql :: Table (DBSqlite a) -> Sql (DBSqlite a) '[] '[Sel ColumnMeta]
-getSLColumnMetaSql t = Sql "getSLColumnMetaSql" defEnc (E1 (SelP 1 decColumnMetaSqlite)) [st|pragma table_info (#{escapeField t (_tName t)})|]
+getSLColumnMetaSql t = Sql "getSLColumnMetaSql" defEnc (E1 (SelP decColumnMetaSqlite)) [st|pragma table_info (#{escapeField t (_tName t)})|]
 
 -- https://www.techonthenet.com/sqlite/datatypes.php
 -- all dates are numeric types!!!
