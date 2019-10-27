@@ -37,8 +37,7 @@ dependencies:
 - Frames >= 0.6.1
 - generics-sop
 - ghc-prim
-- HDBC == 2.4.0.3
-- HDBC-odbc == 2.5.0.2
+- hdbc-odbc2
 - lens
 - logging
 - monad-logger

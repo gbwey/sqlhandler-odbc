@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fbdee13fe5acbf98e5fcaa119d3e9259f01e4ae31857d08e685119aa2534c384
+-- hash: 26b7a2f729be2d76039cbe5a7e8fa3eb2cecd1b8f92852aba8ab10f398ffc959
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -63,8 +63,6 @@ library
   ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fomit-interface-pragmas
   build-depends:
       Frames >=0.6.1
-    , HDBC ==2.4.0.3
-    , HDBC-odbc ==2.5.0.2
     , base >=4.7 && <=5.1
     , bytestring
     , containers
@@ -74,6 +72,7 @@ library
     , formatting
     , generics-sop
     , ghc-prim
+    , hdbc-odbc2
     , lens
     , logging
     , monad-logger
@@ -112,8 +111,6 @@ test-suite spec
   ghc-options: -threaded -O0 -fomit-interface-pragmas
   build-depends:
       Frames >=0.6.1
-    , HDBC ==2.4.0.3
-    , HDBC-odbc ==2.5.0.2
     , QuickCheck
     , base
     , bytestring
@@ -124,6 +121,7 @@ test-suite spec
     , formatting
     , generics-sop
     , ghc-prim
+    , hdbc-odbc2
     , hspec
     , lens
     , logging

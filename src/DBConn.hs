@@ -170,7 +170,7 @@ runSqlRawI conn hs sql = do
   runSqlImpl "runSqlRawI" id conn hs (T.unpack sql)
 
 -- | 'runSqlImpl' runs an untyped query where you pass in a callback to pull out the values you want
-runSqlImpl :: (ML e m, H.IConnection b) => String -> (([(String, H.SqlColDesc)], [[SqlValue]]) -> ret) -> b -> [SqlValue] -> String -> m [Either Int ret]
+runSqlImpl :: (ML e m, H.IConnection b) => String -> (([H.SqlColDesc], [[SqlValue]]) -> ret) -> b -> [SqlValue] -> String -> m [Either Int ret]
 runSqlImpl desc callback conn ps sql = do
   -- dt <- liftIO getZonedTime
   $logDebug [st|runSqlImpl: running #{desc} sql=#{newline}#{sql}|]

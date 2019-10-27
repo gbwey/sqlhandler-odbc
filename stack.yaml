@@ -4,9 +4,7 @@ packages:
 - location: '.'
 - location: ../logging
   extra-dep: true
-- location: ../hdbc
-  extra-dep: true
-- location: ../hdbc-odbc
+- location: ../hdbc-odbc2
   extra-dep: true
 - location: ../table-layout
   extra-dep: true

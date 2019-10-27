@@ -102,14 +102,14 @@ getSqlMetasHdbc fn hms =
   flip S.evalStateT Set.empty $
     forM (itoList hms) $ uncurry (getSqlMetaHdbc fn)
 
-getSqlMetaHdbc  :: (E.MonadError SqlTHException m, S.MonadState (Set Text) m) => (Text -> Text) -> Int -> (String, H.SqlColDesc) -> m (String, TH.Name, Bool)
-getSqlMetaHdbc  fn i z@(nm, d) = do
-  nm' <- getCleanName fn i (Just (T.pack nm))
-  t <- case convertTypeMeta (H.colType d) of
-         Nothing -> E.throwError $ MissingSqlMetaData [st|getSqlMetaHdbc: missing type for column #{i} meta[#{show z}]|]
+getSqlMetaHdbc  :: (E.MonadError SqlTHException m, S.MonadState (Set Text) m) => (Text -> Text) -> Int -> H.SqlColDesc -> m (String, TH.Name, Bool)
+getSqlMetaHdbc  fn i meta = do
+  nm' <- getCleanName fn i (Just (T.pack $ H.colName meta))
+  t <- case convertTypeMeta (H.colType meta) of
+         Nothing -> E.throwError $ MissingSqlMetaData [st|getSqlMetaHdbc: missing type for column #{i} meta[#{show meta}]|]
          Just c -> return c
-  b <- case H.colNullable d of
-         Nothing -> E.throwError $ MissingSqlMetaData [st|getSqlMetaHdbc: missing nullable for column #{i} meta[#{show z}]|]
+  b <- case H.colNullable meta of
+         Nothing -> E.throwError $ MissingSqlMetaData [st|getSqlMetaHdbc: missing nullable for column #{i} meta[#{show meta}]|]
          Just c -> return c
   return (T.unpack nm', t, b)
 
