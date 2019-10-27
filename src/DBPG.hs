@@ -51,7 +51,7 @@ data DBPG a = DBPG {
                    , _pgpwd :: !Secret
                    , _pgdb :: !Text
                    , _pgport :: !(Maybe Natural)
-                   } deriving (TH.Lift, Show, Generic)
+                   } deriving (TH.Lift, Show, Generic, Read)
 
 makeLenses ''DBPG
 

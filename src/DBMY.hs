@@ -47,7 +47,7 @@ data DBMY a = DBMY { _mydriverdsn :: !Text
                    , _mypwd :: !Secret
                    , _mydb :: !Text
                    , _myport :: !(Maybe Natural)
-                   } deriving (TH.Lift, Show, Generic)
+                   } deriving (TH.Lift, Show, Generic, Read)
 
 makeLenses ''DBMY
 

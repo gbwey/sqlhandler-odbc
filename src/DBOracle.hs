@@ -42,7 +42,7 @@ import Logging
 import qualified Language.Haskell.TH.Syntax as TH
 
 data OracleConnType = TnsName { _ocdriver :: !Text, _octns :: !Text } | DsnOracle !Text
-  deriving (TH.Lift, Show, Generic)
+  deriving (TH.Lift, Show, Generic, Read)
 
 instance FromDhall OracleConnType where
   autoWith _ = toOCT
@@ -59,7 +59,7 @@ data DBOracle a = DBOracle { _orConnType :: OracleConnType
                            , _oruid :: !Text
                            , _orpwd :: !Secret
                            , _orschema :: !Text
-                           } deriving (TH.Lift, Show, Generic)
+                           } deriving (TH.Lift, Show, Generic, Read)
 
 makeLenses ''DBOracle
 

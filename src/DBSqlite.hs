@@ -43,7 +43,7 @@ import qualified Language.Haskell.TH.Syntax as TH
 data DBSqlite a = DBSqlite { _s3driverdsn :: !Text
                            , _s3schema :: !(Maybe Text)
                            , _s3fn :: !FilePath
-                           } deriving (TH.Lift, Show, Eq, Generic)
+                           } deriving (TH.Lift, Show, Eq, Generic, Read)
 
 makeLenses ''DBSqlite
 

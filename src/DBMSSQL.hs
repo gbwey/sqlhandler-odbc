@@ -44,7 +44,7 @@ import Dhall hiding (maybe,string,map)
 import Logging
 
 data MSAuthn = Trusted | UserPwd { _msUser :: Text, _msPassword :: Secret }
-  deriving (TH.Lift, Show, Eq, Generic)
+  deriving (TH.Lift, Show, Eq, Generic, Read)
 
 instance FromDhall MSAuthn where
   autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
@@ -54,7 +54,7 @@ data DBMS a = DBMS {
                , _msserver :: !Text
                , _msauthn :: !MSAuthn
                , _msdb :: !Text
-               } deriving (TH.Lift, Show, Eq, Generic)
+               } deriving (TH.Lift, Show, Eq, Generic, Read)
 
 makeLenses ''DBMS
 
