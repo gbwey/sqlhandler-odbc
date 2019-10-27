@@ -364,11 +364,21 @@ compareIt tps =
             <> pure [lt|both and all good #{length oks}|]
             <> map (f . fst) oks
             <> pure [lt|both but with errors LT #{length lterrs}|]
-            <> map (\((a,i),(_,j)) -> [lt|#{padn a} #{padi i} #{padi j}|]) lterrs
+            <> map (\((a,i),(_,j)) -> [lt|#{padn a} #{padi i} #{padi j}     #{pct i j}|]) lterrs
             <> pure [lt|both but with errors GT #{length gterrs}|]
-            <> map (\((a,i),(_,j)) -> [lt|#{padn a} #{padi i} #{padi j}|]) gterrs
+            <> map (\((a,i),(_,j)) -> [lt|#{padn a} #{padi i} #{padi j}     #{pct i j}|]) gterrs
             <> pure [lt|Left=#{length ll} Right=#{length rr} Ok=#{length oks} Errs=#{length errs} LTErrs=#{length lterrs} GTErrs=#{length gterrs}|]
 
+pct :: Int -> Int -> String
+pct a b =
+  if a == 0 || b == 0 then "empty!"
+  else let x :: Double
+           x = fromIntegral a / fromIntegral b
+           y :: Int
+           y = abs $ truncate $ 100 * if x < 1 then 1-x else x-1
+       in if y < 5 then "< 5%"
+          else if y < 10 then "< 10%"
+          else show y ++ "% !"
 
 -- | 'logDatabaseAll' logs table name and row counts for a given database
 logDatabaseAll :: (GConn a, ML e m) => a -> m ()
