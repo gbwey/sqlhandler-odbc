@@ -20,7 +20,6 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
--- {-# LANGUAGE AllowAmbiguousTypes #-}
 {- |
 Module      : DBConn
 Description : Contains methods for running sql against databases
@@ -72,8 +71,6 @@ import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
 import Data.Maybe
 import Logging
-
-type HSQL = [(Integer, Maybe [[SqlValue]])]
 
 newtype HConn a = HConn H.Connection deriving H.IConnection
 
@@ -285,14 +282,6 @@ getAllViewsSqlImpl :: forall db m e . (ML e m, GConn db)
   => db -> m (Rec ZZZ '[Sel (Table db)])
 getAllViewsSqlImpl db = runSql db RNil $ getAllViewsSql db
 
--- todo: do we use this?
-{-
-allTableCountsPrint :: (GConn a, ML e m) => (Table a -> Bool) -> a -> m [(Table a, Int)]
-allTableCountsPrint p anydb = do
-  xs <- allTablesCount p anydb
-  return $ filter ((/=0) . snd) $ sortBy (flip (comparing snd)) xs
--}
-
 -- doesnt work for oracle ie will try to drop or will fail!
 -- | 'dropTable' is a convenience method for dropping a table
 dropTable :: (ML e m, GConnWrite db) => db -> Table db -> m ()
@@ -411,14 +400,14 @@ prtDiff (tp,tab) =
       t = these showTable showTable (const showTable) tab
       fmt :: Text -> Int -> TL.Text
       fmt ts = F.format ((F.right x0 '_' %. F.stext) % F.right len ' ' % (F.left x3 ' ' %. F.int)) ts t
-      fmtend avg n2 = F.format ((F.left x3 ' ' %. F.int) % (F.left x3 ' ' %. F.int) % "%") n2 (-avg)
+      fmtend n2 avg = F.format ((F.left x3 ' ' %. F.int) % (F.left x3 ' ' %. F.int) % "%") n2 (-avg)
       txt = case tp of
                LeftOnly n       -> fmt "Left only" n
                RightOnly n      -> fmt "Right only" n
                LEmpty n         -> fmt "Left empty" n
                REmpty n         -> fmt "Right empty" n
-               Less (avg,n1,n2) -> fmt "Less" n1 <> fmtend n2 avg
-               More (avg,n1,n2) -> fmt "More" n1 <> fmtend n2 avg
+               Less (n1,n2,avg) -> fmt "Less" n1 <> fmtend n2 avg
+               More (n1,n2,avg) -> fmt "More" n1 <> fmtend n2 avg
                Same n           -> fmt "Same" n
   in ((constrIndex (toConstr tp),tab),txt)
 -- in order of badness  -- have to make Less and More more negative for sorting cos the worst is higher values
@@ -458,7 +447,7 @@ diffDatabase' xs ys =
       bs = groupBy (on (==) fmat) as
       cs = flip map bs $ \x ->
               case sort x of
-                [Left (t1,n1,_,_),Right (t2,n2,_,_)] | _tName t1/= _tName t2 -> error "difDatabase': oops"
+                [Left (t1,n1,_,_),Right (t2,n2,_,_)] | _tName t1 /= _tName t2 -> error "difDatabase': mismatching names"
                                              | otherwise -> (handleBoth (n1,n2), These t1 t2)
                 [Left (t,n,_,_)]  -> (LeftOnly n,This t)
                 [Right (t,n,_,_)] -> (RightOnly n,That t)
@@ -474,8 +463,8 @@ handleBoth (n1,n2) =
     (_,0) -> REmpty n1
     _  -> let avg = round ((100 * (fromIntegral (n2-n1)/fromIntegral n1)) :: Double)
           in case compare n1 n2 of
-               LT -> Less (-avg,n1,n2)
-               GT -> More (-avg,n1,n2)
+               LT -> Less (n1,n2,-avg)
+               GT -> More (n1,n2,avg)
                EQ -> Same n1
 
 flattenSql :: Text -> Text
@@ -562,7 +551,7 @@ compareFields' m1 m2 =
       bs = groupBy (on (==) fmat) as
       cs = flip map bs $ \case
                       [Left t1@(_,z1), Right t2@(_,z2)]
-                        | T.toLower (cName z1) /= T.toLower (cName z2) -> error "compareFields' oops"
+                        | T.toLower (cName z1) /= T.toLower (cName z2) -> error "compareFields': mismatching names"
                         | otherwise -> ((0::Int,cName z1),These t1 t2)
                       [Left t@(_,m)]  -> ((1,cName m),This t)
                       [Right t@(_,m)] -> ((2,cName m),That t)
@@ -574,7 +563,7 @@ prtFieldDiff tab =
   case tab of
     These (c1,t1) (c2,t2)
       | c1 == c2 -> [st|Same #{cName t1} #{cType t1} #{cType t2} #{show c1}|]
-      | otherwise -> [st|***oops!!! Same name but different types c1=#{show c1} c2=#{show c2} t1=#{show t1} t2=#{show t2}|]
+      | otherwise -> [st|***error: Same name but different types c1=#{show c1} c2=#{show c2} t1=#{show t1} t2=#{show t2}|]
     This (_,t) -> [st|Left only #{cName t} #{cType t}|]
     That (_,t) -> [st|Right only #{cName t} #{cType t}|]
 
@@ -585,8 +574,6 @@ removeKeys :: [Text] -> [(Text, Text)] -> [(Text, Text)]
 removeKeys (map (T.strip . T.toLower) -> cs) tps =
   let ff = T.strip . T.toLower
   in filter (\(a,b) -> not (ff a `elem` cs || ff b `elem` cs)) tps
---  filter (\(a,b) -> a `elem` map dupe (intersectBy (on (==) T.toLower) xs ys) map (T.strip . T.toLower *** T.strip . T.toLower)
---  f (intersectBy (on (==) T.toLower) xs ys)
 
 compareTableDataBoth :: (GConn a, ML e m) => a -> Table a -> Table a -> ([Text] -> [Text] -> [(Text, Text)]) -> m [[SqlValue]]
 compareTableDataBoth db t1 t2 cmp = do

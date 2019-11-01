@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -19,7 +20,6 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
-{-# OPTIONS -Wall #-}
 module TestConnections where
 import Prelude hiding (FilePath)
 import GConn

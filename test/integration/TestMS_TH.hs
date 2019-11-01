@@ -1,3 +1,5 @@
+{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
+{-# OPTIONS -Wno-unused-imports #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -6,8 +8,6 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GADTs #-}
-{-# OPTIONS -Wall #-}
-{-# OPTIONS -Wno-unused-imports #-}
 module TestMS_TH where
 import DBConn
 import GConn

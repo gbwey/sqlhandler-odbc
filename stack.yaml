@@ -1,19 +1,6 @@
-flags: {}
-extra-package-dbs: []
+resolver: lts-14.10
 packages:
-- location: '.'
-- location: ../logging
-  extra-dep: true
-- location: ../hdbc-odbc2
-  extra-dep: true
-- location: ../table-layout
-  extra-dep: true
-- location: ../typelevel
-  extra-dep: true
-- location: ../predicate-typed
-  extra-dep: true
-- location: ../sqlhandler
-  extra-dep: true
+- '.'
 extra-deps:
 - pretty-terminal-0.1.0.0
 - tree-view-0.5
@@ -22,8 +9,11 @@ extra-deps:
 - symbols-0.3.0.0
 - dhall-1.27.0
 - smtp-mail-0.2.0.0
-
-arch: x86_64
-resolver: lts-14.10
+- ../logging
+- ../hdbc-odbc2
+- ../table-layout
+- ../typelevel
+- ../predicate-typed
+- ../sqlhandler
 
 # ghc-options: {"$locals": -ddump-to-file -ddump-hi}

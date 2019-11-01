@@ -1,3 +1,5 @@
+{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
+{-# OPTIONS -Wno-unused-imports #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -8,8 +10,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
-{-# OPTIONS -Wall #-}
-{-# OPTIONS -Wno-unused-imports #-}
 {-# LANGUAGE KindSignatures #-}
 module Main where
 import DBConn
