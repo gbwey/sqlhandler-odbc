@@ -156,12 +156,12 @@ logSqlHandlerExceptions es = do
   let len = length es
   forM_ (itoList es) $ \(i,e) -> $logError [st|#{succ i} of #{len}: #{seShortMessage e}|]
 
--- | 'runSqlRawI runs an untyped query
+-- | 'runSqlRaw' runs an untyped query with metadata
 runSqlRaw :: (ML e m, GConn db) => db -> [SqlValue] -> Text -> m [ResultSet]
 runSqlRaw db hs sql = withDB db $ \conn -> runSqlRawI conn hs sql
 
--- | 'runSqlRawI' runs an untyped query using an existing connection using 'withDB'
-runSqlRawI :: (ML e m) => HConn db -> [SqlValue] -> Text -> m [ResultSet]
+-- | 'runSqlRawI' runs an untyped query with metadata using an existing connection using 'withDB'
+runSqlRawI :: ML e m => HConn db -> [SqlValue] -> Text -> m [ResultSet]
 runSqlRawI conn hs sql = do
   $logDebug [st|runSqlRawI: encoded hs=#{show hs}|]
   runSqlImpl "runSqlRawI" id conn hs (T.unpack sql)
