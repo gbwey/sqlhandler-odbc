@@ -26,7 +26,7 @@ import Data.Time
 import Predicate
 import Predicate.Refined
 import Predicate.Refined3
-import Predicate.Refined3Helper
+import Predicate.Examples.Refined3
 import GHC.TypeLits (Nat)
 import Data.Kind (Type)
 
