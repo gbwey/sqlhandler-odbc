@@ -58,11 +58,9 @@ mkdir test1
 cd test1
 
 git clone https://github.com/gbwey/logging
+git clone https://github.com/gbwey/hdbc-odbc2
 git clone https://github.com/gbwey/table-layout
-git clone https://github.com/gbwey/hdbc
-git clone https://github.com/gbwey/hdbc-odbc
 git clone https://github.com/gbwey/typelevel
-git clone https://github.com/gbwey/predicate
 git clone https://github.com/gbwey/predicate-typed
 git clone https://github.com/gbwey/sqlhandler
 git clone https://github.com/gbwey/sqlhandler-odbc
