@@ -25,8 +25,10 @@ import TestConnections
 import Data.Time
 import Predicate
 import Predicate.Refined
-import Predicate.Refined3
-import Predicate.Examples.Refined3
+import qualified Predicate.Refined2 as R2
+import qualified Predicate.Examples.Refined2 as R2
+import qualified Predicate.Refined3 as R3
+import qualified Predicate.Examples.Refined3 as R3
 import GHC.TypeLits (Nat)
 import Data.Kind (Type)
 
@@ -48,26 +50,36 @@ s3_3TEST = mkSql' "select * from mixed"
 s3_3TEST1 :: Sql (DBSqlite a) '[] '[Sel (Int, Refined (Ceiling Int Id >> Between 0 500) Double, UTCTime, String)]
 s3_3TEST1 = mkSql' "select * from mixed"
 
-s3_CARD :: Sql (DBSqlite a) '[] '[Sel (Int, String, MakeR3 (Ccn '[4,4,3]), MakeR3 (BaseN 16), MakeR3 DateTimeN)]
+s3_CARD' :: Sql (DBSqlite a) '[] '[Sel (Int, String, R2.MakeR2 (R2.Ccn 11), R2.MakeR2 (R2.BaseN 16), R2.MakeR2 R2.DateTimeN)]
+s3_CARD' = mkSql' "select * from cardinfo where id < 5"
+
+s3_CARD1' :: Sql (DBSqlite a) '[] '[Sel (Int, String, R2.MakeR2 (R2.Ccn 11), R2.MakeR2 (R2.BaseN 16), R2.MakeR2 R2.DateTimeN)]
+s3_CARD1' = mkSql' "select * from cardinfo where id <> 6"
+
+s3_CARD2' :: Sql (DBSqlite a) '[] '[Sel (Int, String, R2.MakeR2 (R2.Ccn 11), R2.MakeR2 (R2.BaseN 16), R2.MakeR2 R2.DateTimeN)]
+s3_CARD2' = mkSql' "select * from cardinfo where id <> 7"
+
+
+s3_CARD :: Sql (DBSqlite a) '[] '[Sel (Int, String, R3.MakeR3 (R3.Ccn '[4,4,3]), R3.MakeR3 (R3.BaseN 16), R3.MakeR3 R3.DateTimeN)]
 s3_CARD = mkSql' "select * from cardinfo where id < 5"
 
-s3_CARD1 :: Sql (DBSqlite a) '[] '[Sel (Int, String, MakeR3 (Ccn '[4,4,3]), MakeR3 (BaseN 16), MakeR3 DateTimeN)]
+s3_CARD1 :: Sql (DBSqlite a) '[] '[Sel (Int, String, R3.MakeR3 (R3.Ccn '[4,4,3]), R3.MakeR3 (R3.BaseN 16), R3.MakeR3 R3.DateTimeN)]
 s3_CARD1 = mkSql' "select * from cardinfo where id <> 6"
 
-s3_CARD2 :: Sql (DBSqlite a) '[] '[Sel (Int, String, MakeR3 (Ccn '[4,4,3]), MakeR3 (BaseN 16), MakeR3 DateTimeN)]
+s3_CARD2 :: Sql (DBSqlite a) '[] '[Sel (Int, String, R3.MakeR3 (R3.Ccn '[4,4,3]), R3.MakeR3 (R3.BaseN 16), R3.MakeR3 R3.DateTimeN)]
 s3_CARD2 = mkSql' "select * from cardinfo where id <> 7"
 
 type DateTimeN1 =
   '(ParseTimeP UTCTime "%Y-%m-%d %H:%M:%S" Id, 'True,
     FormatTimeP "%Y-%m-%d %H:%M:%S" Id, String)
 
-s3_test1 :: Sql (DBSqlite a) '[] '[Sel (MakeR3 (FromSeconds UTCTime), MakeR3 Ssn)]
+s3_test1 :: Sql (DBSqlite a) '[] '[Sel (R3.MakeR3 (FromSeconds UTCTime), R3.MakeR3 R3.Ssn)]
 s3_test1 = mkSql' "select 1546304461 as seconds, '123-34-2224' as ssn union all select 0, '123-12-2222'"
 
-s3_test2 :: Sql (DBSqlite a) '[] '[Sel (MakeR3 (FromSeconds UTCTime), MakeR3 Ssn)]
+s3_test2 :: Sql (DBSqlite a) '[] '[Sel (R3.MakeR3 (FromSeconds UTCTime), R3.MakeR3 R3.Ssn)]
 s3_test2 = mkSql' "select 1546304461 as seconds, '123-34-2224' as ssn union all select 0, '666-12-2222'"
 
-s3_test3 :: Sql (DBSqlite a) '[] '[Sel (MakeR3 (Ccn '[4,4,3]), MakeR3 (BaseN 16), MakeR3 DateTimeN1)]
+s3_test3 :: Sql (DBSqlite a) '[] '[Sel (R3.MakeR3 (R3.Ccn '[4,4,3]), R3.MakeR3 (R3.BaseN 16), R3.MakeR3 DateTimeN1)]
 s3_test3 = mkSql' [st|select '1234-5678-903' as cardnumber, 'ff' as hexvalue, '2001-07-04 12:13:14' as targetdate
             -- union all select '1234-5678-903', 'aa0g45', '2001-07-04 12:13:14'
             -- union all select '1234-5678-904', 'aa045', '2001-07-04 12:13:14'
@@ -75,7 +87,7 @@ s3_test3 = mkSql' [st|select '1234-5678-903' as cardnumber, 'ff' as hexvalue, '2
             union all select '3333-1111-709', '4822e', '2019-09-02 23:04:59'
           |]
 
-s3_test4 :: Sql (DBSqlite a) '[] '[Sel (MakeR3 (Ccn '[4,4,3]), MakeR3 (BaseN 16), MakeR3 DateTimeN, MakeR3 (BaseN 2))]
+s3_test4 :: Sql (DBSqlite a) '[] '[Sel (R3.MakeR3 (R3.Ccn '[4,4,3]), R3.MakeR3 (R3.BaseN 16), R3.MakeR3 R3.DateTimeN, R3.MakeR3 (R3.BaseN 2))]
 s3_test4 = mkSql' [st|select '1234-5678-903' as cardnumber, 'ff' as hexvalue, '2019-12-22 12:13:14' as targetdate, '10000111' as binvalue
 union all select '1111-2841-991', '128ab', 'June 21 2009 12:13:14', '0000011'
 union all select '6433-1000-006', '278fec', '11/30/09 12:13:29', '111'
