@@ -19,8 +19,8 @@ import DBOracle
 import Data.Proxy
 import Data.Functor
 
-suite :: IO ()
-suite = defaultMain $ testGroup "TestDBConn"
+suite :: TestTree
+suite = testGroup "TestDBConn"
   [ testCase "insertTable.ex1" $ (@?=) (insertTableSqlPrivate @(DBMS _) (1,5) "fred") ("insert into [fred] values (?,?,?,?,?)", 5)
   , testCase "insertTable.ex2" $ (@?=) (insertTableSqlPrivate @(DBMS _) (2,5) "dbo.fred") ("insert into dbo.[fred] values (?,?,?,?,?), (?,?,?,?,?)", 10)
   , testCase "insertTable.ex3" $ (@?=) (insertTableSqlPrivate @(DBPG _) (2,5) "fred") ("insert into \"fred\" values (?,?,?,?,?), (?,?,?,?,?)", 10)

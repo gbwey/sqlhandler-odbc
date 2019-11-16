@@ -19,8 +19,8 @@ import Test.Tasty.HUnit
 import Data.Either
 import Control.Arrow
 
-suite :: IO ()
-suite = defaultMain $ testGroup "TestSqlParser"
+suite :: TestTree
+suite = testGroup "TestSqlParser"
   [ testCase "sqlparser.blanklines.good" $ expectAll' (Just ()) (=~ matchBlankSqlRE) goods
   , testCase "sqlparser.blanklines.bad" $ expectAll' Nothing (=~ matchBlankSqlRE) bads
   , testCase "sqlparser.ex1" $ (@?=) (matchSqlField (Just "tf") "   field1      int not null ") (Right [PColumn "field1" "int not null" "   tf.field1"])
