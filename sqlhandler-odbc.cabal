@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 26b7a2f729be2d76039cbe5a7e8fa3eb2cecd1b8f92852aba8ab10f398ffc959
+-- hash: 318b00d8afe14250df11142c105ba80c641653456d4e7ae6f4d667b3a5306afa
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -15,7 +15,7 @@ license-file:   LICENSE
 build-type:     Simple
 data-files:
     conn.dhall
-    coreconn.dhall
+    coredb.dhall
     log.dhall
     corelog.dhall
 
@@ -66,6 +66,7 @@ library
     , base >=4.7 && <=5.1
     , bytestring
     , containers
+    , database
     , dhall >=1.27.0
     , directory
     , either
@@ -115,6 +116,7 @@ test-suite spec
     , base
     , bytestring
     , containers
+    , database
     , dhall >=1.27.0
     , directory
     , either

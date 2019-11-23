@@ -13,7 +13,8 @@ module TestMY_TH where
 import DBConn
 import GConn
 import Sql_TH
-import DBMY
+import DBMY ()
+import Database.DBMY
 import Sql
 import Logging
 import Text.Shakespeare.Text

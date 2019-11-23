@@ -29,10 +29,10 @@ flags:
 dependencies:
 - bytestring
 - containers
+- database
 - dhall >= 1.27.0
 - directory
 - either
-- safe
 - formatting
 - Frames >= 0.6.1
 - generics-sop
@@ -45,6 +45,7 @@ dependencies:
 - predicate-typed
 - regex-applicative
 - resourcet
+- safe
 - semigroups
 - shakespeare
 - sqlhandler
@@ -111,6 +112,6 @@ tests:
 
 data-files:
 - conn.dhall
-- coreconn.dhall
+- coredb.dhall
 - log.dhall
 - corelog.dhall

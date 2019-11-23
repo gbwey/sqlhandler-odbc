@@ -12,7 +12,8 @@
 module TestPG_TH where
 import DBConn
 import GConn
-import DBPG
+import DBPG ()
+import Database.Postgres
 import Sql_TH
 import Sql
 import Logging

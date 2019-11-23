@@ -8,6 +8,7 @@ Maintainer  : gbwey9@gmail.com
 Implementation of GConn for sqlite.
 -}
 {-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
+{-# OPTIONS -Wno-orphans #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -18,40 +19,19 @@ Implementation of GConn for sqlite.
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
 module DBSqlite where
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Lazy.Builder (fromText)
 import GConn
 import Data.Char
-import System.IO
 import Sql
-import GHC.Generics (Generic)
-import Control.Lens.TH
 import Language.Haskell.TH hiding (Dec)
-import Dhall hiding (maybe,string,map)
-import Logging (genericAutoZ)
 import qualified Language.Haskell.TH.Syntax as TH
-
-data DBSqlite a = DBSqlite { _s3driverdsn :: !Text
-                           , _s3schema :: !(Maybe Text)
-                           , _s3fn :: !FilePath
-                           } deriving (TH.Lift, Show, Eq, Generic, Read)
-
-makeLenses ''DBSqlite
-
-instance FromDhall (DBSqlite a) where
-  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
-
-instance ToText (DBSqlite a) where
-  toText x = fromText $ maybe "" (<> ".") (_s3schema x) <> T.pack (_s3fn x)
+import Database.Sqlite
 
 type instance WriteableDB (DBSqlite Writeable) = 'True
 
@@ -61,7 +41,6 @@ instance GConn (DBSqlite a) where
     TH.lift c
 
   ignoreDisconnectError _ = True
-  connText DBSqlite {..} = [st|#{_s3driverdsn};Database=#{_s3fn};|] -- ;TraceFile=d:\haskell\s.log;|]
   connCSharpText DBSqlite {..} = undefined
   showDb DBSqlite {..} = [st|sqlite db=#{_s3fn}|]
   getSchema = const Nothing
@@ -101,7 +80,6 @@ select case
        CBinary -> "varchar"
        COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to mssql " ++ show o
   limitSql _ = maybe mempty (\n -> [st|limit #{n}|])
-  getDbDefault _ = ''DBSqlite
 
 data LiteMeta = LiteMeta { tpos :: !Int
                          , tnm :: !Text

@@ -164,11 +164,11 @@ runSqlRaw db hs sql = withDB db $ \conn -> runSqlRawI conn hs sql
 runSqlRawI :: ML e m => HConn db -> [SqlValue] -> Text -> m [ResultSet]
 runSqlRawI conn hs sql = do
   $logDebug [st|runSqlRawI: encoded hs=#{show hs}|]
-  runSqlImpl "runSqlRawI" id conn hs (T.unpack sql)
+  runSqlImpl "runSqlRawI" conn hs (T.unpack sql)
 
 -- | 'runSqlImpl' runs an untyped query where you pass in a callback to pull out the values you want
-runSqlImpl :: (ML e m, H.IConnection b) => String -> (([H.SqlColDesc], [[SqlValue]]) -> ret) -> b -> [SqlValue] -> String -> m [Either Int ret]
-runSqlImpl desc callback conn ps sql = do
+runSqlImpl :: (ML e m, H.IConnection b) => String -> b -> [SqlValue] -> String -> m [Either Int ([H.SqlColDesc], [[SqlValue]])]
+runSqlImpl desc conn ps sql = do
   -- dt <- liftIO getZonedTime
   $logDebug [st|runSqlImpl: running #{desc} sql=#{newline}#{sql}|]
   UE.bracket (liftIO $ H.prepare conn sql) (liftIO . H.finish) $ \stmt -> do
@@ -177,12 +177,11 @@ runSqlImpl desc callback conn ps sql = do
         go !i (Just (Right meta)) = do
                         $logDebug [st|runSqlImpl: Result set! i=#{i}|]
                         rs <- liftIO $ H.fetchAllRows' stmt
-                        let r = callback (meta,rs)
 --                        $logDebug [st|runSqlImpl fetchAllRows' #{show r}|]
                         zz <- liftIO $ H.nextResultSet stmt
 --                        $logDebug [st|runSqlImpl nextResultSet' #{show zz}|]
                         yy <- go (i+1) zz
-                        return $ Right r: yy
+                        return $ Right (meta,rs): yy
         go !i (Just (Left n)) = do
                         $logDebug [st|runSqlImpl: Update statement! ie rc==#{show n} i=#{i}|]
                         zz <- liftIO $ H.nextResultSet stmt
@@ -207,7 +206,7 @@ runSqlMetaImpl domany desc conn ps sql = do
     rc <- liftIO $ H.execute stmt ps
     let go _ Nothing = return []
         go !(i::Int) (Just (Right meta)) = do
-                        $logDebug [st|runSqlImpl: Result set! i=#{i}|]
+                        $logDebug [st|runSqlMetaImpl: Result set! i=#{i}|]
                         if domany then do
                           zz <- liftIO $ H.nextResultSet stmt
                           yy <- go (i+1) zz

@@ -1,6 +1,7 @@
 -- using getPGTableCountsSql instead for counts of tables cos no roundtripping needed and is fast!
 -- multiple resultsets work great with postgres
 {-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
+{-# OPTIONS -Wno-orphans #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -32,43 +33,20 @@ import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Lazy.Builder (fromText)
 import GConn
 import Sql
 import Control.Arrow
-import GHC.Generics (Generic)
-import Control.Lens.TH
 import Language.Haskell.TH.Syntax
-import Dhall hiding (maybe,string,map)
-import Logging
 import qualified Language.Haskell.TH.Syntax as TH
-
-data DBPG a = DBPG {
-                     _pgdriverdsn :: !Text
-                   , _pgserver :: !Text
-                   , _pgschema :: Maybe Text
-                   , _pguid :: !Text
-                   , _pgpwd :: !Secret
-                   , _pgdb :: !Text
-                   , _pgport :: !(Maybe Natural)
-                   } deriving (TH.Lift, Show, Generic, Read)
-
-makeLenses ''DBPG
-
-instance FromDhall (DBPG a) where
-  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
+import Database.Postgres
 
 type instance WriteableDB (DBPG Writeable) = 'True
-
-instance ToText (DBPG a) where
-  toText x = fromText $ maybe "" (<> ".") (_pgschema x) <> _pgdb x
 
 instance GConn (DBPG a) where
   loadConnTH _ k = do
     c <- runIO $ loadConn @(DBPG a) k
     TH.lift c
 
-  connText DBPG {..} = [st|#{_pgdriverdsn};Server=#{_pgserver};Port=#{maybe "5432" show _pgport};Database=#{_pgdb};Uid=#{_pguid};Pwd=#{unSecret _pgpwd};|]
   connCSharpText = undefined
   showDb DBPG {..} = [st|postgres ip=#{_pgserver} db=#{_pgdb}|]
   getSchema = _pgschema -- not sure how to specify the schema for postgres odbc
@@ -121,7 +99,6 @@ else '#{notfound}' end
        CCLOB -> "text"
        COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to postgres " ++ show o
   limitSql _ = maybe mempty (\n -> [st|limit #{n}|])
-  getDbDefault _ = ''DBPG
 
 pgType :: ColumnMeta -> ColDataType
 pgType (T.toLower. cType &&& cScale -> (ss,mscale))

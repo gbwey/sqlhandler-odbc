@@ -35,13 +35,14 @@ import Sql
 import Data.Vinyl
 import qualified UnliftIO.Exception as UE
 import DBConn
-import DBMSSQL
 import Data.Char
 import qualified Data.Set as Set
 import Data.Set (Set)
 import qualified Control.Monad.State as S
 import qualified Data.Map.Strict as M
 import Logging
+import Database.MSSql
+import DBMSSQL ()
 
 data SqlTHException =
     InvalidSql Text

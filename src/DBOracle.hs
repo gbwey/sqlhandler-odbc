@@ -1,4 +1,5 @@
 {-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
+{-# OPTIONS -Wno-orphans #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -21,58 +22,23 @@ Maintainer  : gbwey9@gmail.com
 
 Implementation of GConn for oracle.
 -}
-module DBOracle where
+module DBOracle (
+    module DBOracle
+  , module Database.Oracle
+  ) where
 --import Language.Haskell.TH hiding (Dec)
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
-import Data.Text (Text)
-import qualified Data.Text as T
-import Data.Text.Lazy.Builder (fromText)
 import Control.Arrow
 import Data.Maybe
 import GConn
 import Sql
 import GHC.Stack
-import GHC.Generics (Generic)
-import Control.Lens.TH
 import Language.Haskell.TH.Syntax
-import Dhall hiding (maybe,string,map)
-import qualified Dhall as D
-import Logging
 import qualified Language.Haskell.TH.Syntax as TH
-
-data OracleConnType = TnsName { _ocdriver :: !Text, _octns :: !Text } | DsnOracle !Text
-  deriving (TH.Lift, Show, Generic, Read)
-
-instance FromDhall OracleConnType where
-  autoWith _ = toOCT
-
--- union of a record and a single constructor
--- constructor is a functor only but record is applicative
-toOCT :: D.Type OracleConnType
-toOCT = union
-  (  constructor "TnsName" (record ( TnsName <$> field "driver" D.strictText <*> field "tns" D.strictText ))
-  <> ( DsnOracle <$> constructor "DsnOracle" D.strictText)
-  )
-
-data DBOracle a = DBOracle { _orConnType :: OracleConnType
-                           , _oruid :: !Text
-                           , _orpwd :: !Secret
-                           , _orschema :: !Text
-                           } deriving (TH.Lift, Show, Generic, Read)
-
-makeLenses ''DBOracle
-
-instance FromDhall (DBOracle a) where
-  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
+import Database.Oracle
 
 type instance WriteableDB (DBOracle Writeable) = 'True
-
-instance ToText OracleConnType where
-  toText = fromText . T.pack . show
-
-instance ToText (DBOracle a) where
-  toText = fromText . _orschema
 
 instance GConn (DBOracle a) where
   loadConnTH _ k = do
@@ -80,10 +46,6 @@ instance GConn (DBOracle a) where
     TH.lift c
 
 -- ;FWC=T;StatementCache=T;
-  connText DBOracle {..} =
-    case _orConnType of
-      TnsName driverdsn tns -> [st|#{driverdsn}; dbq=#{tns}; Uid=#{_oruid}; Pwd=#{unSecret _orpwd};|]
-      DsnOracle dsn -> [st|DSN=#{dsn}; Uid=#{_oruid}; Pwd=#{unSecret _orpwd};|]
   connCSharpText = undefined
   showDb DBOracle {..} = [st|oracle #{_orConnType} schema=#{_orschema}|]
   getSchema = Just . _orschema
@@ -134,7 +96,6 @@ else '#{notfound}' end from dual
        COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to oracle " ++ show o
 --  limitSql _ = maybe mempty (\n -> [st|OFFSET 0 ROWS FETCH NEXT #{n} ROWS ONLY|])
   limitSql _ = maybe mempty (\n -> [st|rownum < #{n}|])  -- older versions but trickier to get right
-  getDbDefault _ = ''DBOracle
 
 
 -- bearbeiten spaeter

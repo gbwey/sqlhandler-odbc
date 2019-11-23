@@ -1,6 +1,7 @@
 -- multiple result sets work with semicolon delimiters but cant get them to work when using placeholders ie ?
 -- they work with inserts selects etc!!! ;option=67108864 [[without placeholders only!]]
 {-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
+{-# OPTIONS -Wno-orphans #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -11,10 +12,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
 {- |
 Module      : DBMY
@@ -26,45 +25,24 @@ Maintainer  : gbwey9@gmail.com
 Implementation of GConn for mysql.
 -}
 module DBMY where
---import Language.Haskell.TH hiding (Dec)
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Lazy.Builder (fromText)
 import GConn
 import Sql
-import GHC.Generics (Generic)
-import Control.Lens.TH
 import qualified Language.Haskell.TH.Syntax as TH
 import Language.Haskell.TH hiding (Dec)
-import Dhall hiding (maybe,string,map)
-import Logging
-
-data DBMY a = DBMY { _mydriverdsn :: !Text
-                   , _myserver :: !Text
-                   , _myuid :: !Text
-                   , _mypwd :: !Secret
-                   , _mydb :: !Text
-                   , _myport :: !(Maybe Natural)
-                   } deriving (TH.Lift, Show, Generic, Read)
-
-makeLenses ''DBMY
-
-instance FromDhall (DBMY a) where
-  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
+import Database.MySql
 
 type instance WriteableDB (DBMY Writeable) = 'True
-
-instance ToText (DBMY a) where
-  toText = fromText . _mydb
 
 instance GConn (DBMY a) where
   loadConnTH _ k = do
     c <- runIO $ loadConn @(DBMY a) k
     TH.lift c
 
-  connText DBMY {..} = [st|#{_mydriverdsn};Server=#{_myserver};Port=#{maybe "3306" show _myport};Database=#{_mydb};User=#{_myuid};Password=#{unSecret _mypwd};option=67108864|]
+--  connText DBMY {..} = [st|#{_mydriver};Server=#{_myserver};Port=#{maybe "3306" show _myport};Database=#{_mydb};User=#{_myuid};Password=#{unSecret _mypwd};option=67108864|]
   connCSharpText = undefined
   showDb DBMY {..} = [st|mysql ip=#{_myserver} db=#{_mydb}|]
   getSchema = Just . _mydb -- no schemas within dbs ie treats dbs as if it is a schema!!!
@@ -114,7 +92,6 @@ SELECT case when count(*) > 0 then '#{found}' else '#{notfound}' end
        CCLOB -> "blob"
        COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to mysql " ++ show o
   limitSql _ = maybe mempty (\n -> [st|limit #{n}|])
-  getDbDefault _ = ''DBMY
 
 myType :: ColumnMeta -> ColDataType
 myType (T.toLower . cType -> ss)

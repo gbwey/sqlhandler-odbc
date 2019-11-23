@@ -12,12 +12,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
 --import DBConn
 import GConn
-import DBPG
-import DBMSSQL
-import DBOracle
 --import Sql
 import Data.Proxy
 import Data.Functor
+import DBMSSQL
+import DBOracle
+import DBPG ()
+import Database.Postgres
 
 suite :: TestTree
 suite = testGroup "TestDBConn"

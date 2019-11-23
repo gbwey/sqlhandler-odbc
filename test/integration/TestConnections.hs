@@ -23,14 +23,17 @@
 module TestConnections where
 import Prelude hiding (FilePath)
 import GConn
-import DBMSSQL
-import DBOracle
-import DBSqlite
-import DBPG
-import DBMY
 import System.IO (FilePath)
 import Sql_TH
 import Language.Haskell.TH
+import DBMSSQL
+import DBOracle
+import DBSqlite ()
+import DBPG ()
+import DBMY ()
+import Database.Postgres
+import Database.MySql
+import Database.Sqlite
 
 sqliteX :: FilePath -> DBSqlite Writeable
 sqliteX = DBSqlite "DRIVER=SQLite3 ODBC Driver;Timeout=10000;NoTxn=1" Nothing

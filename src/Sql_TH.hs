@@ -31,7 +31,6 @@ import Data.Char
 import Control.Lens.TH
 import Data.Vinyl (Rec(..), ElField)
 import qualified UnliftIO.Exception as UE
-import DBMSSQL
 import DBConn
 import GConn
 import qualified Data.Text as T
@@ -42,6 +41,9 @@ import Sql
 import Data.Tagged
 import Data.Proxy
 import Text.Shakespeare.Text
+import Database.MSSql
+import Database.Util
+
 
 -- | options for customizing the generated Sql functions
 data GenOpts = GenOpts {

@@ -9,6 +9,7 @@ extra-deps:
 - symbols-0.3.0.0
 - dhall-1.27.0
 - smtp-mail-0.2.0.0
+- ../database
 - ../logging
 - ../hdbc-odbc2
 - ../table-layout

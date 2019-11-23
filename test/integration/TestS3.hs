@@ -15,7 +15,8 @@ module Main where
 import DBConn
 import GConn
 import Sql_TH
-import DBSqlite
+import DBSqlite ()
+import Database.Sqlite
 import Sql
 import Logging
 import Text.Shakespeare.Text

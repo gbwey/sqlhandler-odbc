@@ -1,4 +1,5 @@
 {-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
+{-# OPTIONS -Wno-orphans #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -11,9 +12,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
 {- |
 Module      : DBMSSQL
@@ -24,54 +22,32 @@ Maintainer  : gbwey9@gmail.com
 
 Implementation of GConn for ms sql server.
 -}
-module DBMSSQL where
+module DBMSSQL (
+    module DBMSSQL
+  , module Database.MSSql
+  ) where
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Text.Lazy.Builder (fromText)
 import GConn
 import Data.Time
 import Sql
 import Control.Arrow
 import Data.Vinyl
 import GHC.Stack
-import GHC.Generics (Generic)
-import Control.Lens.TH
+import Data.Text.Lazy.Builder (fromText)
 import Language.Haskell.TH.Syntax -- (Lift)
 import qualified Language.Haskell.TH.Syntax as TH
-import Dhall hiding (maybe,string,map)
-import Logging
-
-data MSAuthn = Trusted | UserPwd { _msUser :: Text, _msPassword :: Secret }
-  deriving (TH.Lift, Show, Eq, Generic, Read)
-
-instance FromDhall MSAuthn where
-  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
-
-data DBMS a = DBMS {
-                 _msdriver :: !Text
-               , _msserver :: !Text
-               , _msauthn :: !MSAuthn
-               , _msdb :: !Text
-               } deriving (TH.Lift, Show, Eq, Generic, Read)
-
-makeLenses ''DBMS
-
-instance FromDhall (DBMS a) where
-  autoWith i = genericAutoZ i { fieldModifier = T.drop 3 }
-
+import Database.Util
+import Database.MSSql
 type instance WriteableDB (DBMS Writeable) = 'True
-
-instance ToText (DBMS a) where
-  toText = fromText . _msdb
 
 instance GConn (DBMS a) where
   loadConnTH _ k = do
     c <- runIO $ loadConn @(DBMS a) k
     TH.lift c
 
-  connText DBMS {..} = [st|#{_msdriver};Server=#{_msserver};Database=#{_msdb};#{connAuth _msauthn};|]
   connCSharpText DBMS {..} = T.unpack [st|Server=#{_msserver};Database=#{_msdb};#{connAuthMSSQLCSharp _msauthn};Connection Timeout=0;MultipleActiveResultSets=true;|] -- Packet Size=32767
   ignoreDisconnectError _ = True
   showDb DBMS {..} = [st|mssql ip=#{_msserver} db=#{_msdb}|]
@@ -139,7 +115,6 @@ END
        CBinary -> [st|varbinary(#{cLength})|]
        COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to mssql " ++ show o
   limitSql _ = maybe mempty (\n -> [st|top #{n}|])
-  getDbDefault _ = ''DBMS
 
 getMSColumnMetaSql :: DBMS db -> Table (DBMS db) -> Sql (DBMS db) '[] '[Sel ColumnMeta]
 getMSColumnMetaSql db t =
@@ -343,10 +318,6 @@ select 'NUMERIC_ROUNDABORT',case when (8192 & @options) = 8192 then 1 else 0 end
 union all
 select 'XACT_ABORT',case when (16384 & @options) = 16384 then 1 else 0 end
 |]
-
-connAuth :: MSAuthn -> String
-connAuth Trusted = "Trusted_Connection=yes"
-connAuth (UserPwd uid (Secret pwd)) = T.unpack [st|uid=#{uid};pwd=#{pwd}|]
 
 bcpauth :: MSAuthn -> [String]
 bcpauth Trusted = ["-T"]

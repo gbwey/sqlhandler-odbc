@@ -53,6 +53,7 @@ import qualified Language.Haskell.TH as TH
 import Dhall hiding (maybe,string,map)
 import Data.List
 import Data.Char
+import Database.Util
 
 loadConn :: forall a . FromDhall a => Text -> IO a
 loadConn key = input auto ("let x = ./conn.dhall in x." <> key)
@@ -133,13 +134,11 @@ getConn' odbcparams db =
   in H.connectODBC (T.unpack (cs <> ret))
 
 -- | 'GConn' is the central class to this package. Each database type needs to implement this.
-class ToText a => GConn a where  -- Show a was causing infinite loop on compile if we omit MyLogger: to do with Streaming undecidableinstances and show instance for the stream
+class (DConn a, ToText a) => GConn a where  -- Show a was causing infinite loop on compile if we omit MyLogger: to do with Streaming undecidableinstances and show instance for the stream
   -- | given a key it loads a Template Haskell expression for the database connection
   loadConnTH :: p a -> Text -> TH.Q TH.Exp
   getConn :: a -> IO H.Connection
   getConn = getConn' []
-  -- | return the odbc connection string
-  connText :: a -> Text
   -- | the sqlite odbc driver misbehaves so we need to ignore the disconnect error
   -- todo: is this still a problem (still on windows but need to test)
   ignoreDisconnectError :: proxy a -> Bool
@@ -170,7 +169,6 @@ class ToText a => GConn a where  -- Show a was causing infinite loop on compile 
   -- | limit clause per database. eg rownum for oracle / limit for postgres / top for mssql
   limitSql :: p a -> Maybe Int -> Text
   -- | Template haskell name for this database type
-  getDbDefault :: p a -> TH.Name
 
 type GetAllTablesCount a = F '["name" ::: Table a, "size" ::: Int, "created" ::: Maybe UTCTime, "updated" ::: Maybe UTCTime]
 
