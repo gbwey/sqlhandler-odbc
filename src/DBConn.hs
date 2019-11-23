@@ -30,9 +30,8 @@ Maintainer  : gbwey9@gmail.com
 Generic methods for running sql / comparing databases / printing and logging.
 -}
 module DBConn (
-  module DBConn,
-  module GConn,
-  module Database.Util
+    module DBConn
+  , module GConn
   ) where
 import Control.Monad.Logger
 import Control.Monad.IO.Class
@@ -75,7 +74,6 @@ import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
 import Data.Maybe
 import Logging
-import Database.Util
 
 newtype HConn a = HConn H.Connection deriving H.IConnection
 

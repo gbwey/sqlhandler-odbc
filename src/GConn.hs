@@ -54,9 +54,8 @@ import GHC.Stack
 import Data.Vinyl
 import qualified Language.Haskell.TH as TH
 import Dhall hiding (maybe,string,map)
-import Data.List
-import Data.Char
 import Database.Util
+import Logging (trim)
 
 loadConn :: forall a . FromDhall a => Text -> IO a
 loadConn key = input auto ("let x = ./conn.dhall in x." <> key)
@@ -91,9 +90,6 @@ instance GConn a => IsString (Table a) where
     in case parseTableLR ss of -- should be fail?? and not use IsString?
       Left _ -> Table Nothing ConnSchema (stripQuotes mdelims (T.strip (T.pack ss))) True
       Right a -> a
-
-trim :: String -> String
-trim = dropWhileEnd isSpace . dropWhile isSpace
 
 parseTableLR :: forall a. GConn a => String -> Either String (Table a)
 parseTableLR ss' =
