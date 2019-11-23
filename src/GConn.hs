@@ -27,7 +27,10 @@ Maintainer  : gbwey9@gmail.com
 
 Each database type needs to implement GConn
 -}
-module GConn where
+module GConn (
+    module GConn
+  , module Database.Util
+ ) where
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import qualified Data.Text as T
@@ -143,13 +146,6 @@ class (DConn a, ToText a) => GConn a where  -- Show a was causing infinite loop 
   -- todo: is this still a problem (still on windows but need to test)
   ignoreDisconnectError :: proxy a -> Bool
   ignoreDisconnectError _ = False
-  -- | c# connection string
-  connCSharpText :: a -> String
-  showDb :: a -> Text
-  getDb :: a -> Maybe Text
-  getSchema :: a -> Maybe Text
-  -- | start and end deimiters for each database type
-  getDelims :: proxy a -> Maybe (Char, Char)
   -- | lists each table in a given database
   getAllTablesSql :: a -> Sql a '[] '[Sel (Table a)]
   -- | lists each view in a given database
@@ -168,7 +164,6 @@ class (DConn a, ToText a) => GConn a where  -- Show a was causing infinite loop 
   getAllTablesCountSql = const Nothing
   -- | limit clause per database. eg rownum for oracle / limit for postgres / top for mssql
   limitSql :: p a -> Maybe Int -> Text
-  -- | Template haskell name for this database type
 
 type GetAllTablesCount a = F '["name" ::: Table a, "size" ::: Int, "created" ::: Maybe UTCTime, "updated" ::: Maybe UTCTime]
 

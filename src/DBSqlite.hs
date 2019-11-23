@@ -41,11 +41,6 @@ instance GConn (DBSqlite a) where
     TH.lift c
 
   ignoreDisconnectError _ = True
-  connCSharpText DBSqlite {..} = undefined
-  showDb DBSqlite {..} = [st|sqlite db=#{_s3fn}|]
-  getSchema = const Nothing
-  getDb = Just . T.pack . _s3fn
-  getDelims _ = Just ('"','"')
   getAllTablesSql _ = mkSql "getAllTablesSql sqlite" [st|
      SELECT '.' || name FROM sqlite_master WHERE type='table'
      order by name

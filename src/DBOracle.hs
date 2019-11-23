@@ -46,11 +46,6 @@ instance GConn (DBOracle a) where
     TH.lift c
 
 -- ;FWC=T;StatementCache=T;
-  connCSharpText = undefined
-  showDb DBOracle {..} = [st|oracle #{_orConnType} schema=#{_orschema}|]
-  getSchema = Just . _orschema
-  getDb = const Nothing -- i dont know how to go across dbs within oracle
-  getDelims _ = Just ('\"','\"')
   getAllTablesSql DBOracle {..} = mkSql "getAllTablesSql Oracle" [st|
     select owner || '.' || TABLE_NAME
     from SYS.ALL_TABLES

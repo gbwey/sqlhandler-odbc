@@ -43,11 +43,6 @@ instance GConn (DBMY a) where
     TH.lift c
 
 --  connText DBMY {..} = [st|#{_mydriver};Server=#{_myserver};Port=#{maybe "3306" show _myport};Database=#{_mydb};User=#{_myuid};Password=#{unSecret _mypwd};option=67108864|]
-  connCSharpText = undefined
-  showDb DBMY {..} = [st|mysql ip=#{_myserver} db=#{_mydb}|]
-  getSchema = Just . _mydb -- no schemas within dbs ie treats dbs as if it is a schema!!!
-  getDb = const Nothing
-  getDelims _ = Just ('`','`')
   getAllTablesSql _ = mkSql "getAllTablesSql MySql" [st|
     select concat(table_schema, '.', table_name)
     from information_schema.tables

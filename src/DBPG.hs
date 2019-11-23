@@ -47,11 +47,6 @@ instance GConn (DBPG a) where
     c <- runIO $ loadConn @(DBPG a) k
     TH.lift c
 
-  connCSharpText = undefined
-  showDb DBPG {..} = [st|postgres ip=#{_pgserver} db=#{_pgdb}|]
-  getSchema = _pgschema -- not sure how to specify the schema for postgres odbc
-  getDb = Just . _pgdb
-  getDelims _ = Just ('\"','\"')
   getAllTablesCountSql _ = Just getPGTableCountsSql
 
   getAllTablesSql db = mkSql "getAllTablesSql PostGres" [st|

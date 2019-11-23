@@ -39,21 +39,20 @@ import GHC.Stack
 import Data.Text.Lazy.Builder (fromText)
 import Language.Haskell.TH.Syntax -- (Lift)
 import qualified Language.Haskell.TH.Syntax as TH
-import Database.Util
 import Database.MSSql
+
 type instance WriteableDB (DBMS Writeable) = 'True
+
+-- | c# connection string
+connCSharpText :: DBMS a -> String
+connCSharpText DBMS {..} = T.unpack [st|Server=#{_msserver};Database=#{_msdb};#{connAuthMSSQLCSharp _msauthn};Connection Timeout=0;MultipleActiveResultSets=true;|] -- Packet Size=32767
 
 instance GConn (DBMS a) where
   loadConnTH _ k = do
     c <- runIO $ loadConn @(DBMS a) k
     TH.lift c
 
-  connCSharpText DBMS {..} = T.unpack [st|Server=#{_msserver};Database=#{_msdb};#{connAuthMSSQLCSharp _msauthn};Connection Timeout=0;MultipleActiveResultSets=true;|] -- Packet Size=32767
   ignoreDisconnectError _ = True
-  showDb DBMS {..} = [st|mssql ip=#{_msserver} db=#{_msdb}|]
-  getSchema = const Nothing
-  getDb = Just . _msdb
-  getDelims _ = Just ('[',']')
 
   getAllTablesCountSql _ = Just $ mkSql "getAllTablesCountSql" [st|
 SELECT

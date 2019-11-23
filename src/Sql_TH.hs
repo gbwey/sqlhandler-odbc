@@ -32,7 +32,6 @@ import Control.Lens.TH
 import Data.Vinyl (Rec(..), ElField)
 import qualified UnliftIO.Exception as UE
 import DBConn
-import GConn
 import qualified Data.Text as T
 import Data.Text (Text)
 import SqlUtils_TH
@@ -42,7 +41,6 @@ import Data.Tagged
 import Data.Proxy
 import Text.Shakespeare.Text
 import Database.MSSql
-import Database.Util
 
 
 -- | options for customizing the generated Sql functions
