@@ -1,16 +1,11 @@
 {-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
 {-# OPTIONS -Wno-unused-imports #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedLabels #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE KindSignatures #-}
 module Main where
 import DBConn
 import GConn
@@ -37,4 +32,4 @@ main :: IO ()
 main = do
   Spec.spec
   x <- fs $ runSql s3W RNil s3_test1
-  putStrLn $ show $ ext x
+  print $ ext x
