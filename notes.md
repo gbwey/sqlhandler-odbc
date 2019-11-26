@@ -57,6 +57,7 @@ UpdN 1
 mkdir test1
 cd test1
 
+git clone https://github.com/gbwey/database
 git clone https://github.com/gbwey/logging
 git clone https://github.com/gbwey/hdbc-odbc2
 git clone https://github.com/gbwey/table-layout
