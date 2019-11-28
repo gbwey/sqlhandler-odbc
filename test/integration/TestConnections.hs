@@ -21,9 +21,8 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
 module TestConnections where
-import Prelude hiding (FilePath)
+import Data.Text (Text)
 import GConn
-import System.IO (FilePath)
 import Sql_TH
 import Language.Haskell.TH
 import DBMSSQL
@@ -35,8 +34,8 @@ import Database.Postgres
 import Database.MySql
 import Database.Sqlite
 
-sqliteX :: FilePath -> DBSqlite Writeable
-sqliteX = DBSqlite "DRIVER=SQLite3 ODBC Driver;Timeout=10000;NoTxn=1" Nothing
+sqliteX :: Text -> DBSqlite Writeable
+sqliteX fn = DBSqlite "{SQLite3 ODBC Driver}" fn (DbDict [("Timeout", "10000"), ("NoTxn", "1")])
 
 -- 1. big disadvantage over genConn is this is a value without the type signature so you get warnings
 -- 2. big disadvantage is it doesnt work for 'a' : typed th doesnt support polymorphic types
