@@ -1,17 +1,19 @@
 let x = ./coredb.dhall
-let msgo = { driver = "{ODBC Driver 17 for SQL Server}", authn = x.mstrusted, dict = x.nodict }
-let pggo = { driver = "{PostgreSQL ODBC Driver(ANSI)}", schema = None Text, port = None Natural, dict = x.nodict }
-let s3go = { driver = "{SQLite3 ODBC Driver}", dict = [ x.kv "Timeout" "10000", x.kv "NoTxn" "1" ] }
-let mygo = { driver = "{MySQL ODBC 8.0 ANSI Driver}", port = None Natural, dict = [ x.kv "option" "67108864" ] }
 let orgo = { ConnType = x.ortns "{Oracle in XE}" "XE", dict = x.nodict }
-in { msW = msgo /\ { server = "????", db = "????" }
-   , msa = msgo /\ { server = "????", db = "????" }
---   , msX = msgo // { server = "????", authn = x.msauthn "????" "????", db = "????" }
+let pgdriver = "{PostgreSQL ODBC Driver(ANSI)}"
+let msdriver = "{ODBC Driver 17 for SQL Server}"
+let s3driver = "{SQLite3 ODBC Driver}"
+let mydriver = "{MySQL ODBC 8.0 ANSI Driver}"
+in { msW = x.msdef :: {  driver = msdriver, server = "????", db = "????" }
+   , msa = x.msdef :: {  driver = msdriver, server = "????", db = "????" }
 
-   , pgW = pggo /\ { server = "????", uid = "????", pwd = "????", db = "????" }
+   , pgW = x.pgdef :: { driver = pgdriver, server = "????", uid = "????", pwd = "????", db = "????" }
+
    , orW = { ConnType = x.ortns "{Oracle in XE}" "XE", schema = "????", uid = "????", pwd = "????", dict = x.nodict }
    , orR = orgo /\ { schema = "????", uid = "????", pwd = "????" }
-   , s3W = s3go /\ { fn = "s3.db" }
-   , myW = mygo /\ { server = "????", uid = "????", pwd = "????", db = "????" }
+
+   , s3W = x.s3def :: { driver = s3driver, fn = "s3.db" }
+
+   , myW = x.mydef :: { driver = mydriver, server = "????", uid = "????", pwd = "????", db = "????" }
 
    }
