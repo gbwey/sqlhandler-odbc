@@ -67,7 +67,7 @@ library
     , bytestring
     , containers
     , database
-    , dhall >=1.27.0
+    , dhall >=1.28.0
     , directory
     , either
     , formatting
@@ -117,7 +117,7 @@ test-suite spec
     , bytestring
     , containers
     , database
-    , dhall >=1.27.0
+    , dhall >=1.28.0
     , directory
     , either
     , formatting
