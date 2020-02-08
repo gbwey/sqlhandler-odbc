@@ -2,8 +2,8 @@ let kv = \(k : Text) -> \(v : Text) -> { _1 = k, _2 = v }
 let DictT = List { _1 : Text, _2 : Text }
 let nodict = [] : DictT
 
-let MSAuthnT = < Trusted | UserPwd : { User : Text, Password : Text } >
-let msauthn = \(user : Text) -> \(pwd : Text) -> MSAuthnT.UserPwd { User = user, Password = pwd }
+let MSAuthnT = < Trusted | UserPwd : { user : Text, password : Text } >
+let msauthn = \(user : Text) -> \(pwd : Text) -> MSAuthnT.UserPwd { user = user, password = pwd }
 let OrConT = < TnsName : { driver : Text, tns : Text } | DsnOracle : Text >
 let ortns = \(driver : Text) -> \(tns : Text) -> OrConT.TnsName { driver = driver, tns = tns }
 let DBMST = { driver : Text, server : Text, db : Text, authn : MSAuthnT, dict : DictT }

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 318b00d8afe14250df11142c105ba80c641653456d4e7ae6f4d667b3a5306afa
+-- hash: 159e4f4f0976666cd10a8d52c810a21b1cb75840973a2cef1c0b55bd37606e1b
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
