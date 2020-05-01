@@ -30,7 +30,7 @@ dependencies:
 - bytestring
 - containers
 - database
-- dhall >= 1.28.0
+- dhall >= 1.31.1
 - directory
 - either
 - formatting
@@ -69,7 +69,7 @@ library:
   - -Wincomplete-record-updates
   - -Wincomplete-uni-patterns
   - -Wredundant-constraints
-  - -fomit-interface-pragmas
+#  - -fomit-interface-pragmas
   other-modules: []
   dependencies:
   - base >=4.7 && <=5.1
@@ -80,7 +80,7 @@ tests:
     ghc-options:
     - -threaded
     - -O0
-    - -fomit-interface-pragmas
+#    - -fomit-interface-pragmas
     source-dirs:
     - test/integration
     - test/unit
@@ -113,5 +113,15 @@ tests:
 data-files:
 - conn.dhall
 - coredb.dhall
+- corems.dhall
+- coremy.dhall
+- corepg.dhall
+- coreor.dhall
+- cores3.dhall
+- msdriver.dhall
+- mydriver.dhall
+- pgdriver.dhall
+- ordriver.dhall
+- s3driver.dhall
 - log.dhall
 - corelog.dhall

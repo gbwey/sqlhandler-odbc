@@ -3,7 +3,7 @@
 
 * write native SQL for Postgres/MSSQL/Oracle/MySql/Sqlite using the ODBC protocol
 * fully configurable encoding of SQL input parameters and decoding of SQL output (see [sqlhandler](https://github.com/gbwey/sqlhandler))
-* supports typed SQL signatures
+* supports typed SQL signatures that fully describe the input and output.
 * supports multiple resultsets where supported, i.e. MSSQL and Postgres
 * optional template haskell methods for generating type safe signatures from SQL metadata
 * optional template haskell methods to generate database connections using configuration file conn.dhall
@@ -13,12 +13,12 @@
 * supports streaming queries using conduit combinators
 * supports [refined types](https://github.com/gbwey/predicate-typed) allowing for refined fields for any sql columns:
     the encoding / decoding and validation is all handled
-* supports [predicates](https://github.com/gbwey/predicate) for the SQL output which if fails then will log where the failure occurred and rollback the transaction
+* supports predicates for SQL update results which rollback the transaction if the predicate fails
 
 * log.dhall has the logging configuration
 * conn.dhall has database connections for use in template haskell and testing\
   fill in the odbc driver information for the database connections that you want to use
-    
+
 ```haskell
 stack ghci --test
 :l test\integration\TestSqlite_TH.hs test\integration\TestConnections.hs

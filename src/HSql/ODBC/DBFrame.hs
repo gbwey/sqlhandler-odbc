@@ -14,13 +14,13 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE AllowAmbiguousTypes #-} -- need this if not using a proxy but using only type applications [eg createFrameSql]
 {- |
-Module      : DBFrame
+Module      : HSql.ODBC.DBFrame
 Description : Convenience methods for reading and writing a frame to a database
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
 Maintainer  : gbwey9@gmail.com
 -}
-module DBFrame where
+module HSql.ODBC.DBFrame where
 import Data.Time
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
@@ -28,9 +28,11 @@ import qualified Data.Text as T
 import Data.Text (Text)
 import Control.Monad
 import Data.Typeable
-import GConn
-import DBConn
-import Sql
+--import HSql.ODBC.GConn
+import HSql.ODBC.DBConn
+import HSql.Core.Sql
+import HSql.Core.Encoder
+import HSql.Core.VinylUtils
 import Data.Vinyl
 import qualified Data.Vinyl.Functor as V
 import GHC.TypeLits

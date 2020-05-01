@@ -14,7 +14,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeApplications #-}
 {- |
-Module      : DBMSSQL
+Module      : HSql.ODBC.DBMSSQL
 Description : MSSQL Server
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
@@ -22,17 +22,20 @@ Maintainer  : gbwey9@gmail.com
 
 Implementation of GConn for ms sql server.
 -}
-module DBMSSQL (
-    module DBMSSQL
+module HSql.ODBC.DBMSSQL (
+    module HSql.ODBC.DBMSSQL
   , module Database.MSSql
   ) where
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import Data.Text (Text)
 import qualified Data.Text as T
-import GConn
+import HSql.ODBC.GConn
 import Data.Time
-import Sql
+import HSql.Core.Sql
+import HSql.Core.Decoder
+import HSql.Core.Encoder
+import HSql.Core.VinylUtils
 import Control.Arrow
 import Data.Vinyl
 import GHC.Stack

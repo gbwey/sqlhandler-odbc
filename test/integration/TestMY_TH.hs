@@ -10,16 +10,15 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GADTs #-}
 module TestMY_TH where
-import DBConn
-import GConn
-import Sql_TH
-import DBMY ()
+import HSql.ODBC.DBConn
+import HSql.ODBC.Sql_TH
+import HSql.ODBC.DBMY ()
 import Database.DBMY
-import Sql
+import HSql.Core.Sql
 import Logging
 import Text.Shakespeare.Text
 import Data.Vinyl
-import TablePrinter
+import HSql.Core.TablePrinter
 import TestConnections
 
 -- mysql count takes way too long

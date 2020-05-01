@@ -2,13 +2,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {- |
-Module      : SqlParser
+Module      : HSql.ODBC.SqlParser
 Description : simple utilities for parsing mssql statements
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
 Maintainer  : gbwey9@gmail.com
 -}
-module SqlParser
+module HSql.ODBC.SqlParser
  (
  parseCreateTableSqlImpl
 -- ,validName

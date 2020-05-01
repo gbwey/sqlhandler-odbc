@@ -12,7 +12,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
 {- |
-Module      : SqlUtils_TH
+Module      : HSql.ODBC.SqlUtils_TH
 Description : Utilties for 'Sql_TH'
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
@@ -20,7 +20,7 @@ Maintainer  : gbwey9@gmail.com
 
 Template haskell utility functions for 'SQL_TH'
 -}
-module SqlUtils_TH where
+module HSql.ODBC.SqlUtils_TH where
 import qualified Control.Monad.Except as E
 import qualified Language.Haskell.TH as TH
 import Prelude hiding (FilePath)
@@ -31,10 +31,12 @@ import Control.Monad
 import qualified Database.HDBC as H
 import Control.Arrow
 import Control.Lens
-import Sql
+import HSql.Core.Sql
+import HSql.Core.Common
+import HSql.Core.VinylUtils
 import Data.Vinyl
 import qualified UnliftIO.Exception as UE
-import DBConn
+import HSql.ODBC.DBConn
 import Data.Char
 import qualified Data.Set as Set
 import Data.Set (Set)
@@ -42,7 +44,7 @@ import qualified Control.Monad.State as S
 import qualified Data.Map.Strict as M
 import Logging
 import Database.MSSql
-import DBMSSQL ()
+import HSql.ODBC.DBMSSQL ()
 
 data SqlTHException =
     InvalidSql Text

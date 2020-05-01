@@ -14,14 +14,14 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
-module ConcurrencyUtils where
+module HSql.ODBC.ConcurrencyUtils where
 import Control.Monad.Logger
 import Control.Monad.IO.Class
 import Text.Shakespeare.Text
 import qualified Data.Text as T
 import Database.HDBC (SqlValue(..))
 import qualified Data.ByteString.Char8 as B8
-import GConn
+import HSql.ODBC.GConn
 import Control.Monad.State.Strict
 import Control.Lens hiding ((<.>), (:>))
 import Data.Text.Lazy.Builder (fromText)

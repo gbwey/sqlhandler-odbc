@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 159e4f4f0976666cd10a8d52c810a21b1cb75840973a2cef1c0b55bd37606e1b
+-- hash: a8ebbc46d4b58518ef4ee4b7de730243626650ea374118cdd3a77b883f1a3e98
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -16,6 +16,16 @@ build-type:     Simple
 data-files:
     conn.dhall
     coredb.dhall
+    corems.dhall
+    coremy.dhall
+    corepg.dhall
+    coreor.dhall
+    cores3.dhall
+    msdriver.dhall
+    mydriver.dhall
+    pgdriver.dhall
+    ordriver.dhall
+    s3driver.dhall
     log.dhall
     corelog.dhall
 
@@ -46,28 +56,28 @@ flag pg
 
 library
   exposed-modules:
-      ConcurrencyUtils
-      DBConn
-      DBFrame
-      DBMSSQL
-      DBMY
-      DBOracle
-      DBPG
-      DBSqlite
-      GConn
-      Sql_TH
-      SqlParser
-      SqlUtils_TH
+      HSql.ODBC.ConcurrencyUtils
+      HSql.ODBC.DBConn
+      HSql.ODBC.DBFrame
+      HSql.ODBC.DBMSSQL
+      HSql.ODBC.DBMY
+      HSql.ODBC.DBOracle
+      HSql.ODBC.DBPG
+      HSql.ODBC.DBSqlite
+      HSql.ODBC.GConn
+      HSql.ODBC.Sql_TH
+      HSql.ODBC.SqlParser
+      HSql.ODBC.SqlUtils_TH
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fomit-interface-pragmas
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-depends:
       Frames >=0.6.1
     , base >=4.7 && <=5.1
     , bytestring
     , containers
     , database
-    , dhall >=1.28.0
+    , dhall >=1.31.1
     , directory
     , either
     , formatting
@@ -109,7 +119,7 @@ test-suite spec
   hs-source-dirs:
       test/integration
       test/unit
-  ghc-options: -threaded -O0 -fomit-interface-pragmas
+  ghc-options: -threaded -O0
   build-depends:
       Frames >=0.6.1
     , QuickCheck
@@ -117,7 +127,7 @@ test-suite spec
     , bytestring
     , containers
     , database
-    , dhall >=1.28.0
+    , dhall >=1.31.1
     , directory
     , either
     , formatting

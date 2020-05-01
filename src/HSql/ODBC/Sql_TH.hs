@@ -13,7 +13,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE KindSignatures #-}
 {- |
-Module      : Sql_TH
+Module      : HSql.ODBC.Sql_TH
 Description : Template haskell for generating Sql and Sql signatures
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
@@ -21,7 +21,7 @@ Maintainer  : gbwey9@gmail.com
 
 This is very experimental
 -}
-module Sql_TH where
+module HSql.ODBC.Sql_TH where
 import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH
 import qualified Language.Haskell.TH.Syntax as TS
@@ -31,17 +31,20 @@ import Data.Char
 import Control.Lens.TH
 import Data.Vinyl (Rec(..), ElField)
 import qualified UnliftIO.Exception as UE
-import DBConn
+import HSql.ODBC.DBConn
 import qualified Data.Text as T
 import Data.Text (Text)
-import SqlUtils_TH
+import HSql.ODBC.SqlUtils_TH
 import Logging
-import Sql
+import HSql.Core.Sql
+import HSql.Core.Decoder
+import HSql.Core.Encoder
+import Database.HDBC (SqlValue(SqlNull))
 import Data.Tagged
 import Data.Proxy
 import Text.Shakespeare.Text
 import Database.MSSql
-
+import GHC.Stack
 
 -- | options for customizing the generated Sql functions
 data GenOpts = GenOpts {
@@ -107,7 +110,7 @@ sqlMetaToTHImpl s = p ((if thMetaNullable s then AppT (ConT ''Maybe) else id) re
               p = AppT (AppT (PromotedTupleT 2) (LitT (StrTyLit (T.unpack (thMetaCol s)))))
 
 -- | 'getlen' finds the number of encodings ie number of input parameters -- most often one to one but we need to be able to override this
-getlen :: Type -> Int
+getlen :: HasCallStack => Type -> Int
 getlen (AppT _ xs) = 1 + getlen xs
 getlen PromotedNilT = 0
 getlen o = error $ "getlen: unknown type=" ++ show o

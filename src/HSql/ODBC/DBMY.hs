@@ -16,7 +16,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {- |
-Module      : DBMY
+Module      : HSql.ODBC.DBMY
 Description : MySql
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
@@ -24,13 +24,13 @@ Maintainer  : gbwey9@gmail.com
 
 Implementation of GConn for mysql.
 -}
-module DBMY where
+module HSql.ODBC.DBMY where
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import Data.Text (Text)
 import qualified Data.Text as T
-import GConn
-import Sql
+import HSql.ODBC.GConn
+import HSql.Core.Sql
 import qualified Language.Haskell.TH.Syntax as TH
 import Language.Haskell.TH hiding (Dec)
 import Database.MySql

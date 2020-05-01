@@ -10,14 +10,12 @@
 module TestDBConn where
 import Test.Tasty
 import Test.Tasty.HUnit
---import DBConn
-import GConn
---import Sql
+import HSql.ODBC.GConn
 import Data.Proxy
 import Data.Functor
-import DBMSSQL
-import DBOracle
-import DBPG ()
+import HSql.ODBC.DBMSSQL
+import HSql.ODBC.DBOracle
+import HSql.ODBC.DBPG ()
 import Database.Postgres
 
 suite :: TestTree

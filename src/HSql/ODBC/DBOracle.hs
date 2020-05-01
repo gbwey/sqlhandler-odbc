@@ -14,7 +14,7 @@
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
 {- |
-Module      : DBOracle
+Module      : HSql.ODBC.DBOracle
 Description : Oracle
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
@@ -22,8 +22,8 @@ Maintainer  : gbwey9@gmail.com
 
 Implementation of GConn for oracle.
 -}
-module DBOracle (
-    module DBOracle
+module HSql.ODBC.DBOracle (
+    module HSql.ODBC.DBOracle
   , module Database.Oracle
   ) where
 --import Language.Haskell.TH hiding (Dec)
@@ -31,8 +31,8 @@ import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import Control.Arrow
 import Data.Maybe
-import GConn
-import Sql
+import HSql.ODBC.GConn
+import HSql.Core.Sql
 import GHC.Stack
 import Language.Haskell.TH.Syntax
 import qualified Language.Haskell.TH.Syntax as TH

@@ -19,7 +19,7 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveLift #-}
 {-|
-Module      : GConn
+Module      : HSql.ODBC.GConn
 Description : Contains GConn class
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
@@ -27,8 +27,8 @@ Maintainer  : gbwey9@gmail.com
 
 Each database type needs to implement GConn
 -}
-module GConn (
-    module GConn
+module HSql.ODBC.GConn (
+    module HSql.ODBC.GConn
   , module Database.Util
  ) where
 import Prelude hiding (FilePath)
@@ -43,11 +43,17 @@ import Data.Proxy
 import Control.Arrow
 import Data.String
 import Data.Time
-import SqlParser
+import qualified HSql.ODBC.SqlParser as Q
+import HSql.ODBC.SqlParser (PType(..))
 import Control.Lens hiding (at, (<.>), (:>))
 import Text.Regex.Applicative (RE,(=~))
-import Sql
-import TablePrinter (FromField(..))
+import HSql.Core.Decoder
+import HSql.Core.Encoder
+import HSql.Core.Conv
+import HSql.Core.Sql
+import HSql.Core.VinylUtils
+import HSql.Core.ErrorHandler
+import HSql.Core.TablePrinter (FromField(..))
 import qualified Generics.SOP as GS
 import qualified GHC.Generics as G
 import GHC.Stack
@@ -88,7 +94,7 @@ instance GConn a => IsString (Table a) where
   fromString ss =
     let mdelims = getDelims (Proxy @a)
     in case parseTableLR ss of -- should be fail?? and not use IsString?
-      Left _ -> Table Nothing ConnSchema (stripQuotes mdelims (T.strip (T.pack ss))) True
+      Left _ -> Table Nothing ConnSchema (Q.stripQuotes mdelims (T.strip (T.pack ss))) True
       Right a -> a
 
 parseTableLR :: forall a. GConn a => String -> Either String (Table a)
@@ -98,7 +104,7 @@ parseTableLR ss' =
     in maybe (Left ("parseTableLR: failed to parse[" ++ ss' ++ "]")) Right (ss =~ pp1 mdelims)
 
 pp1 :: Maybe (Char, Char) -> RE Char (Table a)
-pp1 mdelims = (\(ma, b, c) -> Table ma (Schema b) c True) <$> tableParser mdelims
+pp1 mdelims = (\(ma, b, c) -> Table ma (Schema b) c True) <$> Q.tableParser mdelims
 
 instance GConn a => ToText (Table a) where
   toText = fromText . showTable
@@ -270,7 +276,7 @@ getField1 = \case
 
 parseCreateTableSql :: GConn db => Sql db a b -> Either Text (Table db, [PType])
 parseCreateTableSql (T.unpack . _sSql -> s) =
-  fmap (\(PTable t xs) -> (toTableName t, xs)) (parseCreateTableSqlImpl s)
+  fmap (\(Q.PTable t xs) -> (toTableName t, xs)) (Q.parseCreateTableSqlImpl s)
 
 -- uses Upd with a predicate for the number of rows that need to be inserted
 insertTableSqlAuto :: GConn db => Sql db a b -> Either Text (ISql db a '[Upd])
@@ -300,9 +306,9 @@ getCreateTableFields :: GConn db => Sql db a b -> Either Text (Table db, [String
 getCreateTableFields s =
   parseCreateTableSql s & _Right . _2 %~ concatMap getField1
 
-commonFields :: Maybe Text -> Text -> Text
+commonFields :: HasCallStack => Maybe Text -> Text -> Text
 commonFields mpref sql =
-  let ys = mapM (matchSqlField mpref) (lines $ T.unpack sql)
+  let ys = mapM (Q.matchSqlField mpref) (lines $ T.unpack sql)
   in case ys of
        Left e -> error $ "commonFields: failed to extract fields " <> T.unpack e
        Right zs -> T.pack (unlines (concatMap getField3 $ concat zs))

@@ -22,14 +22,14 @@
 {-# LANGUAGE PolyKinds #-}
 module TestConnections where
 import Data.Text (Text)
-import GConn
-import Sql_TH
+import HSql.ODBC.GConn
+import HSql.ODBC.Sql_TH
 import Language.Haskell.TH
-import DBMSSQL
-import DBOracle
-import DBSqlite ()
-import DBPG ()
-import DBMY ()
+import HSql.ODBC.DBMSSQL
+import HSql.ODBC.DBOracle
+import HSql.ODBC.DBSqlite ()
+import HSql.ODBC.DBPG ()
+import HSql.ODBC.DBMY ()
 import Database.Postgres
 import Database.MySql
 import Database.Sqlite

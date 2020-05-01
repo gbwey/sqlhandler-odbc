@@ -11,7 +11,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE GADTs #-}
 module TestSqlParser where
-import SqlParser
+import HSql.ODBC.SqlParser
 import Text.Regex.Applicative
 import Test.Tasty
 import Test.Tasty.HUnit

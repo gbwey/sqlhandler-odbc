@@ -20,7 +20,7 @@
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
 {- |
-Module      : DBPG
+Module      : HSql.ODBC.DBPG
 Description : Postgres
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
@@ -28,13 +28,13 @@ Maintainer  : gbwey9@gmail.com
 
 Implementation of GConn for postgres.
 -}
-module DBPG where
+module HSql.ODBC.DBPG where
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import Data.Text (Text)
 import qualified Data.Text as T
-import GConn
-import Sql
+import HSql.ODBC.GConn
+import HSql.Core.Sql
 import Control.Arrow
 import Language.Haskell.TH.Syntax
 import qualified Language.Haskell.TH.Syntax as TH
@@ -133,7 +133,7 @@ SELECT
     , numeric_precision
     , numeric_scale
     , 0 as iscomputed
-    , case when ZZZ.data_type in ('smallserial','serial','bigserial') then 1 else 0 end as is_identity
+    , case when W.data_type in ('smallserial','serial','bigserial') then 1 else 0 end as is_identity
     , case when tab_constraints.constraint_type='PRIMARY KEY' then 1 else 0 end
 FROM information_schema.columns AS tab_columns
 inner join (
@@ -160,7 +160,7 @@ FROM   pg_attribute  a
 WHERE  a.attrelid = '#{_tName t}'::regclass
 AND    a.attnum > 0
 AND    NOT a.attisdropped
-) ZZZ on ZZZ.attname=tab_columns.column_name
+) W on W.attname=tab_columns.column_name
 
 
 LEFT OUTER JOIN

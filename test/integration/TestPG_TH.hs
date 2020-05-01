@@ -10,16 +10,15 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GADTs #-}
 module TestPG_TH where
-import DBConn
-import GConn
-import DBPG ()
+import HSql.ODBC.DBConn
+import HSql.ODBC.DBPG ()
 import Database.Postgres
-import Sql_TH
-import Sql
+import HSql.ODBC.Sql_TH
+import HSql.Core.Sql
 import Logging
 import Text.Shakespeare.Text
 import Data.Vinyl
-import TablePrinter
+import HSql.Core.TablePrinter
 import TestConnections
 
 $(genSql "pgsql1" pgW (\f -> [st|select * from mixed #{f "limit 4"}; select id,description from mixed where id>2 #{f "limit 3"}|]))

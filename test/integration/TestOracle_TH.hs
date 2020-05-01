@@ -10,15 +10,14 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GADTs #-}
 module TestOracle_TH where
-import DBConn
-import GConn
-import Sql_TH
-import DBOracle
-import Sql
+import HSql.ODBC.DBConn
+import HSql.ODBC.Sql_TH
+import HSql.ODBC.DBOracle
+import HSql.Core.Sql
 import Logging
 import Text.Shakespeare.Text
 import Data.Vinyl
-import TablePrinter
+import HSql.Core.TablePrinter
 import TestConnections
 
 $(genSql "or1" orW (\f -> [st|select * from mixed where 1=1 and #{f "rownum < 5"} |]))

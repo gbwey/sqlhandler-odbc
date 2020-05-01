@@ -11,16 +11,15 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
 module TestSqlite_TH where
-import DBConn
-import GConn
-import Sql_TH
-import DBSqlite ()
+import HSql.ODBC.DBConn
+import HSql.ODBC.Sql_TH
+import HSql.ODBC.DBSqlite ()
 import Database.Sqlite
-import Sql
+import HSql.Core.Sql
 import Logging
 import Text.Shakespeare.Text
 import Data.Vinyl
-import TablePrinter
+import HSql.Core.TablePrinter
 import TestConnections
 import Data.Time
 import Predicate

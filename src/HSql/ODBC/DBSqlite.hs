@@ -1,5 +1,5 @@
 {- |
-Module      : DBSqlite
+Module      : HSql.ODBC.DBSqlite
 Description : Sqlite
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
@@ -21,14 +21,17 @@ Implementation of GConn for sqlite.
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
-module DBSqlite where
+module HSql.ODBC.DBSqlite where
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import Data.Text (Text)
 import qualified Data.Text as T
-import GConn
+import HSql.ODBC.GConn
 import Data.Char
-import Sql
+import HSql.Core.Sql
+import HSql.Core.Decoder
+import HSql.Core.Encoder
+import HSql.Core.VinylUtils
 import Language.Haskell.TH hiding (Dec)
 import qualified Language.Haskell.TH.Syntax as TH
 import Database.Sqlite
