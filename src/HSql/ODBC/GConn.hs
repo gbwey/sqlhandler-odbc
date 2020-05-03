@@ -213,8 +213,18 @@ unsafeCastTableWithDB db Table {..} = Table (getDb db) (Schema (getSchema db)) _
 showTable :: GConn a => Table a -> Text
 showTable t = showTableImpl (getDelims t) t
 
-showTableForBCP :: Table a -> String
-showTableForBCP = T.unpack . showTableImpl Nothing
+newtype LogId = LogId { unLogId :: Int } deriving (Show,Eq,Num,Enum,ToText)
+
+showTableForBCP :: Table a -> LogId -> String
+showTableForBCP Table {..} lid =
+  let q0 = case (_tDb,_tSchema) of
+             (Nothing, Schema Nothing) -> ""
+             (Nothing, ConnSchema) -> ""
+             (Just a, Schema Nothing)  -> a <> "__"
+             (Just a, ConnSchema)  -> a <> "__"
+             (Nothing, Schema (Just b))  -> b <> "_"
+             (Just a, Schema (Just b))   -> a <> "_" <> b <> "_"
+  in T.unpack [st|#{q0}#{_tName}.#{lid}|]
 
 escapeField :: GConn a => p a -> Text -> Text
 escapeField p fld =

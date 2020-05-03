@@ -6,7 +6,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE GADTs #-}

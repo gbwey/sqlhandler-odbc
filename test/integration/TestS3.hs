@@ -2,7 +2,6 @@
 {-# OPTIONS -Wno-unused-imports #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}

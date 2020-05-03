@@ -577,11 +577,8 @@ getOneTableRowCount' :: (GConn db, ML e m) => db -> Sql db a b -> m Int
 getOneTableRowCount' anydb sql =
   Sql.ext <$> runSql anydb RNil (Sql.mkSql ("getOneTableRowCount' " <> _sSql sql) [st|select count(*) from #{_sSql sql}|] :: Sql db '[] '[Sql.SelOne Int])
 
-newtype LogId = LogId { unLogId :: Int } deriving (Show,Eq,Num,Enum,ToText)
-
 getColumnInfo' :: (ML e m, GConn db) => db -> Table db -> m (Rec Sql.RState '[Sql.Sel ColumnMeta])
 getColumnInfo' db t = runSql db RNil $ snd (getColumnMetaSql db t)
-
 
 getColumnInfo :: (ML e m, GConn db) => db -> Table db -> m [(ColDataType, ColumnMeta)]
 getColumnInfo db t = do
