@@ -197,7 +197,6 @@ runSqlImpl :: (ML e m, H.IConnection b)
   -> String
   -> m [Either Int ([H.SqlColDesc], [[SqlValue]])]
 runSqlImpl desc conn ps sql = do
-  -- dt <- liftIO getZonedTime
   $logDebug [st|runSqlImpl: running #{desc} sql=#{newline}#{sql}|]
   UE.bracket (liftIO $ H.prepare conn sql) (liftIO . H.finish) $ \stmt -> do
     rc <- liftIO $ H.execute stmt ps

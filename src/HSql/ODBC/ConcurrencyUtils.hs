@@ -13,6 +13,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TupleSections #-}
 module HSql.ODBC.ConcurrencyUtils where
 import Control.Monad.Logger
@@ -29,11 +30,12 @@ import Control.Arrow
 import Data.List (delete, sortOn)
 import Control.Concurrent (getNumCapabilities)
 import Data.Maybe
-import qualified UnliftIO as U
 import qualified UnliftIO.Async as UA
 import qualified UnliftIO.Exception as UE
 import Logging
 import GHC.Stack
+import qualified Dhall as D
+import GHC.Generics (Generic)
 
 newtype ThreadPool = ThreadPool { thOverride :: Maybe Int } deriving (Show,Eq)
 
@@ -54,12 +56,12 @@ instance ToText StreamConcurrency where
 defSC :: Int -> StreamConcurrency
 defSC n = StreamConcurrency threadNormal Nothing n 1
 
-getWorkChunks :: MonadIO m => StreamConcurrency -> m Int
-getWorkChunks sc =
-  case _sNumBatches sc of
+getWorkChunks :: MonadIO m => (Maybe Int, ThreadPool) -> m Int
+getWorkChunks (numb, thp) =
+  case numb of
     Just x -> return x
     Nothing -> do
-      (_,ov) <- liftIO $ getNumThreads (thOverride (_sThPool sc))
+      (_,ov) <- liftIO $ getNumThreads (thOverride thp)
       return ov
 
 paditC :: (MonadLogger m,MonadIO m) => Int -> [SqlValue] -> m [SqlValue]
@@ -123,30 +125,35 @@ dumpNumThreads th = do
 getNumThreads :: MonadIO m => Maybe Int -> m (NC, Int)
 getNumThreads mth = do
   n <- liftIO getNumCapabilities
-  return $ (NC n,) (max 1 $ fromMaybe n mth)
+  let z = fromMaybe n mth
+  if z < 1 then error $ "getNumThreads: number of threads < 1 z=" ++ show z ++ " n=" ++ show n
+  else return (NC n, z)
 
-threadedForM_ :: ML e m => ThreadPool -> [a] -> (Int -> a -> m b) -> m ()
-threadedForM_ xs amb = void . threadedForM xs amb
+data PoolStrategy =
+     PoolUnliftIO
+   | PoolCustom
+   deriving (Show,Eq,Generic)
 
-threadedForM :: ML e m => ThreadPool -> [a] -> (Int -> a -> m b) -> m [(Int,b)]
-threadedForM _ [] _ = $logWarn "threadedForM: nothing to do!" >> return []
-threadedForM th@ThreadPool {..} xs act = do
+instance D.FromDhall PoolStrategy
+
+threadedForM_ :: ML e m => PoolStrategy -> ThreadPool -> [a] -> (Int -> a -> m b) -> m ()
+threadedForM_ pl th amb = void . threadedForM pl th amb
+
+threadedForM :: ML e m => PoolStrategy -> ThreadPool -> [a] -> (Int -> a -> m b) -> m [(Int,b)]
+threadedForM _ _ [] _ = $logWarn "threadedForM: nothing to do!" >> return []
+threadedForM pl th@ThreadPool {..} xs act = do
   (NC n,ov) <- liftIO $ getNumThreads thOverride
   when (length xs < ov) $ $logWarn [st|threadedForM: more threads than tasks!! tasks=#{length xs} threads=#{ov}|]
   if n==1
   then timeCommand [st|threadedForM UNTHREADED Capabilities=#{n}|] (zip [1..] <$> zipWithM act [1..] xs)
-  else timeCommand [st|threadedForM Capabilities=#{n} using #{ov} #{show th}|] $
-          if newThreaded then U.pooledMapConcurrentlyN ov (\(i,j) -> (i,) <$> act i j) (zip [1::Int ..] xs)
-          else concurrentlyLimited ov (zipWith (\i j -> (i,\() -> act i j)) [1..] xs)
-
--- cant use U.pooledMapConcurrentlyN as it doesnt use asyncBound (ie forkOS)
-newThreaded :: Bool
-newThreaded = False
+  else timeCommand [st|threadedForM Capabilities=#{n} using #{ov} #{show pl} #{show th}|] $
+          case pl of
+            PoolUnliftIO -> UA.pooledMapConcurrentlyN         ov (\(i,j) -> (i,) <$> act i j) (zip [1::Int ..] xs)
+            PoolCustom -> concurrentlyLimited                 ov (zipWith (\i j -> (i,\() -> act i j)) [1..] xs)
 
 threadNormal :: ThreadPool
 threadNormal = ThreadPool Nothing
 
 threadNormalOverride :: Int -> ThreadPool
 threadNormalOverride n = ThreadPool (Just n)
-
 

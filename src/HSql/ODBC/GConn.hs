@@ -83,12 +83,12 @@ instance GS.Generic (Table a)
 instance GS.HasDatatypeInfo (Table a)
 
 instance FromField Schema where
-  fromField = (:[]) . show
+  fromField = pure . show
 
 makeLenses ''Table
 
 instance GConn a => FromField (Table a) where
-  fromField = (:[]) . T.unpack . showTable
+  fromField = pure . T.unpack . showTable
 
 instance GConn a => IsString (Table a) where
   fromString ss =
@@ -184,7 +184,7 @@ data ColDataType =
  | COther !Text deriving (Show, Eq, Ord)
 
 instance FromField ColDataType where
-  fromField = (:[]) . show
+  fromField = pure . show
 
 data ColumnMeta = ColumnMeta {
    cName :: !Text

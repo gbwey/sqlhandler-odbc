@@ -27,10 +27,11 @@ flags:
     default: no
 
 dependencies:
+- async
 - bytestring
 - containers
 - database
-- dhall >= 1.31.1
+- dhall >= 1.32.0
 - directory
 - either
 - formatting
@@ -49,6 +50,7 @@ dependencies:
 - semigroups
 - shakespeare
 - sqlhandler
+- stm
 - tagged
 - template-haskell
 - text
@@ -57,10 +59,11 @@ dependencies:
 - typelevel
 - unix-time >= 0.4.6
 - unliftio
+- unliftio-core
 - uuid
 - vinyl >= 0.10.0.0
 
-default-extensions: []
+default-extensions: TemplateHaskell
 library:
   source-dirs: src
   ghc-options:

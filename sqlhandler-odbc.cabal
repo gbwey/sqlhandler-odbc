@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a8ebbc46d4b58518ef4ee4b7de730243626650ea374118cdd3a77b883f1a3e98
+-- hash: 29625008bb6de0bf72c7994ddb046b77e660b2207767026da29b58aa43bf3604
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -70,14 +70,16 @@ library
       HSql.ODBC.SqlUtils_TH
   hs-source-dirs:
       src
+  default-extensions: TemplateHaskell
   ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-depends:
       Frames >=0.6.1
+    , async
     , base >=4.7 && <=5.1
     , bytestring
     , containers
     , database
-    , dhall >=1.31.1
+    , dhall >=1.32.0
     , directory
     , either
     , formatting
@@ -95,6 +97,7 @@ library
     , semigroups
     , shakespeare
     , sqlhandler
+    , stm
     , tagged
     , template-haskell
     , text
@@ -103,6 +106,7 @@ library
     , typelevel
     , unix-time >=0.4.6
     , unliftio
+    , unliftio-core
     , uuid
     , vinyl >=0.10.0.0
   default-language: Haskell2010
@@ -119,15 +123,17 @@ test-suite spec
   hs-source-dirs:
       test/integration
       test/unit
+  default-extensions: TemplateHaskell
   ghc-options: -threaded -O0
   build-depends:
       Frames >=0.6.1
     , QuickCheck
+    , async
     , base
     , bytestring
     , containers
     , database
-    , dhall >=1.31.1
+    , dhall >=1.32.0
     , directory
     , either
     , formatting
@@ -147,6 +153,7 @@ test-suite spec
     , shakespeare
     , sqlhandler
     , sqlhandler-odbc
+    , stm
     , tagged
     , tasty
     , tasty-hunit
@@ -158,6 +165,7 @@ test-suite spec
     , typelevel
     , unix-time >=0.4.6
     , unliftio
+    , unliftio-core
     , uuid
     , vinyl >=0.10.0.0
   if flag(ms)

@@ -5,17 +5,10 @@ let authn = \(user : Text) -> \(pwd : Text) -> AuthnT.UserPwd { user = user, pas
 
 let DBMST = { driver : Text, server : Text, db : Text, authn : AuthnT, dict : List x.DictT }
 
-in {
-   , trusted = AuthnT.Trusted
-   , authn = authn
-
+in x /\ {
    , Type = DBMST
-
    , default = { driver = ./msdriver.dhall, authn = AuthnT.Trusted, dict = x.nodict }
-
-   , nodict = x.nodict
-   , kv = x.kv
-
-   , DBMST = DBMST
-   , AuthnT = AuthnT
+   , trusted = AuthnT.Trusted
+   , authn
+   , AuthnT
    }

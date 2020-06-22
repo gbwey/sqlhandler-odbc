@@ -5,11 +5,9 @@ let kv =
  -> { _1 = k, _2 = v }
  : DictT
 
-let nodict = [] : List DictT
-
 in {
-   , nodict = nodict
-   , DictT = DictT
-   , kv = kv
+   , nodict = [] : List DictT
+   , DictT
+   , kv
 
    }
