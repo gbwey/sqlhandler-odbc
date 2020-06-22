@@ -47,9 +47,9 @@ import Database.MSSql
 import HSql.ODBC.DBMSSQL ()
 
 data SqlTHException =
-    InvalidSql Text
-  | MissingSqlMetaData Text
-  | MetaDataInvalidState Text
+    InvalidSql !Text
+  | MissingSqlMetaData !Text
+  | MetaDataInvalidState !Text
   deriving Show
 
 instance UE.Exception SqlTHException
@@ -169,6 +169,6 @@ data MSSqlTHMetaData = MSSqlTHMetaData
      , thMetaNullable :: !Bool
      , thMetaPrecision :: !Int
      , thMetaScale :: !Int
-     , thMetaTHName :: TH.Name
+     , thMetaTHName :: !TH.Name
      } deriving (Show, Eq)
 

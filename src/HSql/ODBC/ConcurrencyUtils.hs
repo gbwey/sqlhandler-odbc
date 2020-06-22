@@ -20,6 +20,8 @@ import Control.Monad.Logger
 import Control.Monad.IO.Class
 import Text.Shakespeare.Text
 import qualified Data.Text as T
+import qualified Data.Text.Read as TR
+import qualified Data.Text.Encoding as TE
 import Database.HDBC (SqlValue(..))
 import qualified Data.ByteString.Char8 as B8
 import HSql.ODBC.GConn
@@ -78,11 +80,21 @@ convertUsingMeta (cd, ColumnMeta{..}) a = case a of
   SqlByteString bs -> case cd of
                         CFixedString -> SqlString $ B8.unpack bs
                         CString      -> SqlString $ B8.unpack bs
-                        CInt         -> SqlInteger $ read (B8.unpack bs)
+                        CInt         -> case TR.decimal (TE.decodeUtf8 bs) of
+                                          Right (d,e) | T.null e -> SqlInteger d
+                                                     | otherwise -> error $ "convertUsingMeta: CInt " ++ show (d,e) ++ " bs=" ++ show bs
+                                          Left e -> error $ "convertUsingMeta: CInt failed e=" ++ e
                         CDateTime    -> error $ "convertUsingMeta: unsupported type " ++ show cd ++ " bs=" ++ show bs
                         CDate        -> error $ "convertUsingMeta: unsupported type " ++ show cd ++ " bs=" ++ show bs
-                        CFloat       -> SqlDouble $ read (B8.unpack bs)
-                        CBool        -> SqlInt32 $ read (B8.unpack bs)
+                        CFloat       -> case TR.double (TE.decodeUtf8 bs) of
+                                          Right (d,e) | T.null e -> SqlDouble d
+                                                     | otherwise -> error $ "convertUsingMeta: CFloat " ++ show (d,e) ++ " bs=" ++ show bs
+                                          Left e -> error $ "convertUsingMeta: CFloat failed e=" ++ e
+
+                        CBool        -> case TR.decimal (TE.decodeUtf8 bs) of
+                                          Right (d,e) | T.null e -> SqlInt32 d
+                                                     | otherwise -> error $ "convertUsingMeta: CBool " ++ show (d,e) ++ " bs=" ++ show bs
+                                          Left e -> error $ "convertUsingMeta: CBool failed e=" ++ e
                         CBinary      -> a
                         CCLOB        -> a
                         CBLOB        -> a

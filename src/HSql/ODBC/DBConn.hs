@@ -39,6 +39,7 @@ import Data.Time
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as TL
 import Data.Text (Text)
 import Control.Monad
@@ -48,7 +49,6 @@ import Database.HDBC (SqlValue(..))
 import Data.List
 import Control.Arrow
 import qualified Control.Exception as E
-import qualified Data.ByteString.Char8 as B8
 import Data.ByteString (ByteString)
 import Data.Function
 import Data.Ord
@@ -76,8 +76,8 @@ import qualified Language.Haskell.TH as TH
 import Data.UUID (UUID)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
-import Data.Maybe
 import Logging (ML, GBException(..), newline)
+import qualified Data.List.NonEmpty as N
 
 newtype HConn a = HConn H.Connection deriving H.IConnection
 
@@ -173,7 +173,7 @@ runSqlI conn vals (Sql desc enc dec sql) = do
 logSqlHandlerExceptions :: ML e m => Sql.SE -> m ()
 logSqlHandlerExceptions es = do
   let len = length es
-  forM_ (itoList es) $ \(i,e) -> $logError [st|#{succ i} of #{len}: #{Sql.seShortMessage e}|]
+  forM_ (N.zip (N.iterate (+1) (1 :: Int)) es) $ \(i,e) -> $logError [st|#{i} of #{len}: #{Sql.seShortMessage e}|]
 
 -- | 'runSqlRaw' runs an untyped query with metadata
 runSqlRaw :: (ML e m, GConn db) => db -> [SqlValue] -> Text -> m [Sql.ResultSet]
@@ -367,17 +367,25 @@ divvyKeyed xt tp1 tp2 =
 
 -- | 'compareDatabase' compares tables in two databases by name and count of rows. in A and in B / in A only / in B only -- ie These
 compareDatabase :: (GConn a, GConn b, ML e m) => a -> b -> m [These (Table a, Int) (Table b, Int)]
-compareDatabase = compareDatabaseImpl (Just . T.toLower . _tName) (Just . T.toLower . _tName)
-
-compareDatabaseImpl :: (GConn a, GConn b, ML e m) => (Table a -> Maybe Text) -> (Table b -> Maybe Text) -> a -> b -> m [These (Table a, Int) (Table b, Int)]
-compareDatabaseImpl p1 p2 db1 db2 = do
-  tp1 <- fmap (\(a,b,_,_) -> (a,b)) <$> allTablesCount (isJust . p1) db1
-  tp2 <- fmap (\(a,b,_,_) -> (a,b)) <$> allTablesCount (isJust . p2) db2
-  let xt = let cmp p = fromJust . p . fst
-           in either (cmp p1) (cmp p2)
-  let ret = divvyKeyed xt tp1 tp2
+compareDatabase a b = do
+  let fn = T.toLower . _tName
+  x1 <- allTablesCount (const True) a
+  x2 <- allTablesCount (const True) b
+  let ret = compareDatabaseImpl fn fn x1 x2
   mapM_ ($logInfo . TL.toStrict) (compareIt ret)
   return ret
+
+compareDatabaseImpl :: (GConn a, GConn b, Ord c, Ord d)
+  => (Table a -> Text)
+  -> (Table b -> Text)
+  -> [(Table a, Int, c, d)]
+  -> [(Table b, Int, c, d)]
+  -> [These (Table a, Int) (Table b, Int)]
+compareDatabaseImpl p1 p2 x1 x2 =
+  let fn = map (\(a,b,_,_) -> (a,b))
+      xt = let cmp p = p . fst
+           in either (cmp p1) (cmp p2)
+  in divvyKeyed xt (fn x1) (fn x2)
 
 compareIt :: (GConn a, GConn b) => [These (Table a, Int) (Table b, Int)] -> [TL.Text]
 compareIt tps =
@@ -520,16 +528,16 @@ toBcpFromSql :: HasCallStack => SqlValue -> ByteString
 toBcpFromSql = \case
     SqlByteString bs -> bs
     SqlNull -> ""
-    SqlString ss -> B8.pack ss
-    SqlInteger i -> B8.pack (show i)
-    SqlInt64 i -> B8.pack (show i)
-    SqlInt32 i -> B8.pack (show i)
-    SqlDouble d -> B8.pack (show d)
-    SqlChar c -> B8.pack (show c)
-    SqlUTCTime dt -> B8.pack (formatTime defaultTimeLocale "%F %T" dt)
-    SqlLocalDate dt -> B8.pack (formatTime defaultTimeLocale "%F %T" dt)
-    SqlLocalTime dt -> B8.pack (formatTime defaultTimeLocale "%F %T" dt)
-    SqlZonedTime dt -> B8.pack (formatTime defaultTimeLocale "%F %T" dt)
+    SqlString ss -> stringToByteString ss
+    SqlInteger i -> stringToByteString (show i)
+    SqlInt64 i -> stringToByteString (show i)
+    SqlInt32 i -> stringToByteString (show i)
+    SqlDouble d -> stringToByteString (show d)
+    SqlChar c -> stringToByteString (show c)
+    SqlUTCTime dt -> stringToByteString (formatTime defaultTimeLocale "%F %T" dt)
+    SqlLocalDate dt -> stringToByteString (formatTime defaultTimeLocale "%F %T" dt)
+    SqlLocalTime dt -> stringToByteString (formatTime defaultTimeLocale "%F %T" dt)
+    SqlZonedTime dt -> stringToByteString (formatTime defaultTimeLocale "%F %T" dt)
     o -> error $ T.unpack [st|copyDBSqltoBCPFile: dont know how to handle [#{show o}]|]
 
 createDBTableFrom :: (ML e m, GConn src, GConnWrite tgt)
@@ -725,3 +733,6 @@ systypes =
   ,("xml", ''ByteString)
   ,("sysname", ''ByteString)
   ]
+
+stringToByteString :: String -> ByteString
+stringToByteString = TE.encodeUtf8 . T.pack

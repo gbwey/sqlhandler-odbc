@@ -134,7 +134,7 @@ getConn' odbcparams db =
   let cs = connText db
       ret = case odbcparams of
               [] -> mempty
-              _ -> let xs = T.intercalate ";" (map (\(a,b) -> a <> "=" <> b) odbcparams)
+              _:_ -> let xs = T.intercalate ";" (map (\(a,b) -> a <> "=" <> b) odbcparams)
                    in (if T.last cs == ';' then "" else ";") <> xs
   in H.connectODBC (T.unpack (cs <> ret))
 

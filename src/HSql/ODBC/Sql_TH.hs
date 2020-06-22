@@ -48,10 +48,10 @@ import GHC.Stack
 
 -- | options for customizing the generated Sql functions
 data GenOpts = GenOpts {
-    _goEnc :: Q Type
-  , _goNameFunc :: Text -> Text -- ^ pretransform the metadata column name before cleaning and unduping
-  , _goDBParam :: TH.Name  -- ^ database parameter eg '''ReadOnly' '''Writeable (mkName "a")
-  , _goSel :: TH.Name -- ^ '''Sel or '''SelOne
+    _goEnc :: !(Q Type)
+  , _goNameFunc :: !(Text -> Text) -- ^ pretransform the metadata column name before cleaning and unduping
+  , _goDBParam :: !TH.Name  -- ^ database parameter eg '''ReadOnly' '''Writeable (mkName "a")
+  , _goSel :: !TH.Name -- ^ '''Sel or '''SelOne
   }
 
 makeLenses ''GenOpts
