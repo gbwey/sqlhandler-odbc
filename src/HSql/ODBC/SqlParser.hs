@@ -126,7 +126,7 @@ stripQuotes mdelims ts =
     Just (q1,q2) ->
       case (T.head ts,T.last ts) of
         (a,b) | a == q1 && b == q2 -> T.drop 1 $ T.init ts
-        _ -> ts
+              | otherwise -> ts
 
 -- need to make this a little tighter: last bit checks for any old chars:could have dots in it
 tableParser :: Maybe (Char, Char) -> RE Char (Maybe Text,Maybe Text,Text)
