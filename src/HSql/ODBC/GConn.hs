@@ -48,23 +48,23 @@ import HSql.ODBC.SqlParser (PType(..))
 import Control.Lens hiding (at, (<.>), (:>))
 import Text.Regex.Applicative (RE,(=~))
 import HSql.Core.Decoder
-import HSql.Core.Encoder
-import HSql.Core.Conv
+import HSql.Core.Encoder (DefEnc(..),Enc(..))
+import HSql.Core.Conv (Conv(..))
 import HSql.Core.Sql
 import HSql.Core.VinylUtils
-import HSql.Core.ErrorHandler
+import HSql.Core.ErrorHandler (failCE)
 import HSql.Core.TablePrinter (FromField(..))
-import qualified Generics.SOP as GS
-import qualified GHC.Generics as G
-import GHC.Stack
+import qualified Generics.SOP as GS (HasDatatypeInfo,Generic)
+import qualified GHC.Generics as G (Generic)
+import GHC.Stack (HasCallStack)
 import Data.Vinyl
-import qualified Language.Haskell.TH as TH
-import Dhall hiding (maybe,string,map)
+import qualified Language.Haskell.TH as TH (Q,Exp)
+import qualified Dhall as D (FromDhall,input,auto)
 import Database.Util
 import Logging (trim)
 
-loadConn :: forall a . FromDhall a => Text -> IO a
-loadConn key = input auto ("let x = ./conn.dhall in x." <> key)
+loadConn :: forall a . D.FromDhall a => Text -> IO a
+loadConn key = D.input D.auto ("let x = ./conn.dhall in x." <> key)
 
 data Writeable
 data ReadOnly

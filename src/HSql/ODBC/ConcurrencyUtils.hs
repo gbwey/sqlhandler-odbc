@@ -17,27 +17,27 @@
 {-# LANGUAGE TupleSections #-}
 module HSql.ODBC.ConcurrencyUtils where
 import Control.Monad.Logger
-import Control.Monad.IO.Class
-import Text.Shakespeare.Text
+import Control.Monad.IO.Class (liftIO,MonadIO)
+import Control.Monad (when,unless,void,zipWithM)
+import Text.Shakespeare.Text (ToText(toText),st)
 import qualified Data.Text as T
-import qualified Data.Text.Read as TR
-import qualified Data.Text.Encoding as TE
+import qualified Data.Text.Read as TR (decimal,double)
+import qualified Data.Text.Encoding as TE (decodeUtf8)
 import Database.HDBC (SqlValue(..))
-import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Char8 as B8 (unpack)
 import HSql.ODBC.GConn
-import Control.Monad.State.Strict
-import Control.Lens hiding ((<.>), (:>))
+import Control.Lens (makeLenses)
 import Data.Text.Lazy.Builder (fromText)
-import Control.Arrow
+import Control.Arrow ((&&&))
 import Data.List (delete, sortOn)
 import Control.Concurrent (getNumCapabilities)
-import Data.Maybe
-import qualified UnliftIO.Async as UA
-import qualified UnliftIO.Exception as UE
-import Logging
-import GHC.Stack
-import qualified Dhall as D
-import GHC.Generics (Generic)
+import Data.Maybe (fromMaybe)
+import qualified UnliftIO.Async as UA (Async,waitAny,asyncBound,pooledMapConcurrentlyN)
+import qualified UnliftIO.Exception as UE (throwIO)
+import Logging (ML,GBException(..),timeCommand)
+import GHC.Stack (HasCallStack)
+import qualified Dhall as D (FromDhall)
+import GHC.Generics as G (Generic)
 
 newtype ThreadPool = ThreadPool { thOverride :: Maybe Int } deriving (Show,Eq)
 
@@ -144,7 +144,7 @@ getNumThreads mth = do
 data PoolStrategy =
      PoolUnliftIO
    | PoolCustom
-   deriving (Show,Eq,Generic)
+   deriving (Show,Eq,G.Generic)
 
 instance D.FromDhall PoolStrategy
 
