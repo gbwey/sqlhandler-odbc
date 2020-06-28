@@ -22,29 +22,29 @@ Maintainer  : gbwey9@gmail.com
 This is very experimental
 -}
 module HSql.ODBC.Sql_TH where
-import qualified Language.Haskell.TH as TH
+import qualified Language.Haskell.TH as TH (Name,Type)
 import Language.Haskell.TH
 import qualified Language.Haskell.TH.Syntax as TS
-import Control.Monad
-import Data.List
-import Data.Char
-import Control.Lens.TH
+import Control.Monad (forM)
+import Data.List (uncons)
+import Data.Char (isLower)
+import Control.Lens.TH (makeLenses)
 import Data.Vinyl (Rec(..), ElField)
-import qualified UnliftIO.Exception as UE
+import qualified UnliftIO.Exception as UE (throwIO)
 import HSql.ODBC.DBConn
 import qualified Data.Text as T
 import Data.Text (Text)
 import HSql.ODBC.SqlUtils_TH
 import Logging
 import HSql.Core.Sql
-import HSql.Core.Decoder
-import HSql.Core.Encoder
+import HSql.Core.Decoder (defDec)
+import HSql.Core.Encoder (defEnc)
 import Database.HDBC (SqlValue(SqlNull))
 import Data.Tagged
 import Data.Proxy
-import Text.Shakespeare.Text
-import Database.MSSql
-import GHC.Stack
+import Text.Shakespeare.Text (st)
+import Database.MSSql (DBMS)
+import GHC.Stack (HasCallStack)
 
 -- | options for customizing the generated Sql functions
 data GenOpts = GenOpts {

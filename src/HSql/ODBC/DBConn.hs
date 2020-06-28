@@ -39,24 +39,24 @@ import Data.Time
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text
 import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
-import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Encoding as TE (encodeUtf8)
+import qualified Data.Text.Lazy as TL (Text,toStrict,replicate,length)
 import Data.Text (Text)
 import Control.Monad
 import qualified Database.HDBC as H
 import qualified Database.HDBC.ODBC as H
 import Database.HDBC (SqlValue(..))
 import Data.List
-import Control.Arrow
+import Control.Arrow ((&&&),(***))
 import qualified Control.Exception as E
 import Data.ByteString (ByteString)
-import Data.Function
-import Data.Ord
-import Data.These
+import Data.Function (on)
+import Data.Ord (comparing,Down(..))
+import Data.These (These(..),partitionThese,these)
 import qualified Formatting as F
 import Formatting ((%.),(%))
 import HSql.ODBC.GConn
-import Data.Data
+import Data.Data (Data,constrIndex,toConstr)
 import Data.Text.Lazy.Builder (fromText)
 import Control.Lens
 import qualified HSql.Core.Sql as Sql
@@ -68,11 +68,11 @@ import GHC.Stack
 import Data.Vinyl
 import qualified Data.Vinyl as V
 import qualified Data.Vinyl.Functor as V
-import Data.Vinyl.TypeLevel
+import Data.Vinyl.TypeLevel as VT (RecAll)
 import qualified UnliftIO.Exception as UE
 import qualified PCombinators as P
 import GHC.TypeLits
-import qualified Language.Haskell.TH as TH
+import qualified Language.Haskell.TH as TH (Name)
 import Data.UUID (UUID)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
@@ -106,7 +106,7 @@ type RunSqlOk b db =
     ('Text "Readonly database does not allow Upd") P.Mempty
 
 -- |'TSql' has a list of constraints for that need to be fulfilled by runSql*
-type TSql b a = (RecAll Sql.RState b Sql.SingleZ
+type TSql b a = (VT.RecAll Sql.RState b Sql.SingleZ
                , V.ReifyConstraint Show V.Identity a
                , V.RecordToList a
                , V.RMap a

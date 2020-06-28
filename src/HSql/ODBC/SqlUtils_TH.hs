@@ -24,26 +24,26 @@ module HSql.ODBC.SqlUtils_TH where
 import qualified Control.Monad.Except as E
 import qualified Language.Haskell.TH as TH
 import Prelude hiding (FilePath)
-import Text.Shakespeare.Text
+import Text.Shakespeare.Text (st)
 import qualified Data.Text as T
 import Data.Text (Text)
-import Control.Monad
+import Control.Monad (forM,when)
 import qualified Database.HDBC as H
-import Control.Arrow
+import Control.Arrow ((&&&))
 import Control.Lens
 import HSql.Core.Sql
-import HSql.Core.Common
+import HSql.Core.Common (RMeta)
 import HSql.Core.VinylUtils
 import Data.Vinyl
-import qualified UnliftIO.Exception as UE
+import qualified UnliftIO.Exception as UE (Exception,throwIO)
 import HSql.ODBC.DBConn
-import Data.Char
+import Data.Char (isAlphaNum,toLower,isLower,isUpper)
 import qualified Data.Set as Set
 import Data.Set (Set)
-import qualified Control.Monad.State as S
-import qualified Data.Map.Strict as M
-import Logging
-import Database.MSSql
+import qualified Control.Monad.State as S (MonadState,evalStateT,get)
+import qualified Data.Map.Strict as M (lookup)
+import Logging (ML)
+import Database.MSSql (DBMS)
 import HSql.ODBC.DBMSSQL ()
 
 data SqlTHException =

@@ -21,20 +21,19 @@ License     : BSD-3
 Maintainer  : gbwey9@gmail.com
 -}
 module HSql.ODBC.DBFrame where
-import Data.Time
+import Data.Time (UTCTime,ZonedTime,LocalTime,Day)
 import Prelude hiding (FilePath)
-import Text.Shakespeare.Text
+import Text.Shakespeare.Text (st)
 import qualified Data.Text as T
 import Data.Text (Text)
-import Control.Monad
-import Data.Typeable
---import HSql.ODBC.GConn
+import Control.Monad (forM_)
+import Data.Proxy (Proxy(..))
 import HSql.ODBC.DBConn
 import HSql.Core.Sql
-import HSql.Core.Encoder
+import HSql.Core.Encoder (DefEnc,Enc)
 import HSql.Core.VinylUtils
 import Data.Vinyl
-import qualified Data.Vinyl.Functor as V
+import qualified Data.Vinyl.Functor as V (Identity)
 import GHC.TypeLits
 import qualified Frames as F
 import Logging

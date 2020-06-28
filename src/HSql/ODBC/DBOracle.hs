@@ -28,21 +28,20 @@ module HSql.ODBC.DBOracle (
   ) where
 --import Language.Haskell.TH hiding (Dec)
 import Prelude hiding (FilePath)
-import Text.Shakespeare.Text
-import Control.Arrow
-import Data.Maybe
+import Text.Shakespeare.Text (st)
+import Control.Arrow ((&&&))
+import Data.Maybe (fromMaybe)
 import HSql.ODBC.GConn
 import HSql.Core.Sql
 import GHC.Stack
-import Language.Haskell.TH.Syntax
-import qualified Language.Haskell.TH.Syntax as TH
+import qualified Language.Haskell.TH.Syntax as TH (runIO,lift)
 import Database.Oracle
 
 type instance WriteableDB (DBOracle Writeable) = 'True
 
 instance GConn (DBOracle a) where
   loadConnTH _ k = do
-    c <- runIO $ loadConn @(DBOracle a) k
+    c <- TH.runIO $ loadConn @(DBOracle a) k
     TH.lift c
 
 -- ;FWC=T;StatementCache=T;

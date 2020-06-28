@@ -24,20 +24,18 @@ module HSql.ODBC.SqlParser
  ) where
 
 import Prelude hiding (FilePath)
-import Text.Shakespeare.Text
+import Text.Shakespeare.Text (st)
 import qualified Data.Text as T
 import Data.Text (Text)
-import Control.Monad.IO.Class
-import System.IO
-import System.Directory
-import Data.List
-import Data.Char
-import Data.Maybe
-import Control.Applicative
+import Control.Monad.IO.Class (liftIO)
+import System.IO (FilePath)
+import System.Directory (getDirectoryContents)
+import Data.List (dropWhileEnd,sort)
+import Data.Char (isSpace,isAlpha,isAlphaNum,isDigit,toLower)
+import Data.Maybe (mapMaybe,fromMaybe)
 import Text.Regex.Applicative
-import Data.Foldable
-import Data.Function
---import RegexHelper
+import Data.Foldable (asum)
+import Data.Function (on)
 
 space :: RE Char Char
 space = psym isSpace

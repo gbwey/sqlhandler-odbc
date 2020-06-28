@@ -30,21 +30,20 @@ Implementation of GConn for postgres.
 -}
 module HSql.ODBC.DBPG where
 import Prelude hiding (FilePath)
-import Text.Shakespeare.Text
+import Text.Shakespeare.Text (st)
 import Data.Text (Text)
 import qualified Data.Text as T
 import HSql.ODBC.GConn
 import HSql.Core.Sql
-import Control.Arrow
-import Language.Haskell.TH.Syntax
-import qualified Language.Haskell.TH.Syntax as TH
+import Control.Arrow ((&&&))
+import qualified Language.Haskell.TH.Syntax as TH (lift,runIO)
 import Database.Postgres
 
 type instance WriteableDB (DBPG Writeable) = 'True
 
 instance GConn (DBPG a) where
   loadConnTH _ k = do
-    c <- runIO $ loadConn @(DBPG a) k
+    c <- TH.runIO $ loadConn @(DBPG a) k
     TH.lift c
 
   getAllTablesCountSql _ = Just getPGTableCountsSql

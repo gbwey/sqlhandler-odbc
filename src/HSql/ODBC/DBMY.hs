@@ -26,20 +26,19 @@ Implementation of GConn for mysql.
 -}
 module HSql.ODBC.DBMY where
 import Prelude hiding (FilePath)
-import Text.Shakespeare.Text
+import Text.Shakespeare.Text (st)
 import Data.Text (Text)
 import qualified Data.Text as T
 import HSql.ODBC.GConn
 import HSql.Core.Sql
-import qualified Language.Haskell.TH.Syntax as TH
-import Language.Haskell.TH hiding (Dec)
+import qualified Language.Haskell.TH.Syntax as TH (lift,runIO)
 import Database.MySql
 
 type instance WriteableDB (DBMY Writeable) = 'True
 
 instance GConn (DBMY a) where
   loadConnTH _ k = do
-    c <- runIO $ loadConn @(DBMY a) k
+    c <- TH.runIO $ loadConn @(DBMY a) k
     TH.lift c
 
 --  connText DBMY {..} = [st|#{_mydriver};Server=#{_myserver};Port=#{maybe "3306" show _myport};Database=#{_mydb};User=#{_myuid};Password=#{unSecret _mypwd};option=67108864|]

@@ -23,24 +23,23 @@ Implementation of GConn for sqlite.
 {-# LANGUAGE TypeApplications #-}
 module HSql.ODBC.DBSqlite where
 import Prelude hiding (FilePath)
-import Text.Shakespeare.Text
+import Text.Shakespeare.Text (st)
 import Data.Text (Text)
 import qualified Data.Text as T
 import HSql.ODBC.GConn
-import Data.Char
+import Data.Char (isAlphaNum)
 import HSql.Core.Sql
 import HSql.Core.Decoder
 import HSql.Core.Encoder
 import HSql.Core.VinylUtils
-import Language.Haskell.TH hiding (Dec)
-import qualified Language.Haskell.TH.Syntax as TH
+import qualified Language.Haskell.TH.Syntax as TH (lift,runIO)
 import Database.Sqlite
 
 type instance WriteableDB (DBSqlite Writeable) = 'True
 
 instance GConn (DBSqlite a) where
   loadConnTH _ k = do
-    c <- runIO $ loadConn @(DBSqlite a) k
+    c <- TH.runIO $ loadConn @(DBSqlite a) k
     TH.lift c
 
   ignoreDisconnectError _ = True

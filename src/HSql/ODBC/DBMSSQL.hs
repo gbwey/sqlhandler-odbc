@@ -27,21 +27,20 @@ module HSql.ODBC.DBMSSQL (
   , module Database.MSSql
   ) where
 import Prelude hiding (FilePath)
-import Text.Shakespeare.Text
+import Text.Shakespeare.Text (st,ToText(..))
 import Data.Text (Text)
 import qualified Data.Text as T
 import HSql.ODBC.GConn
 import Data.Time
 import HSql.Core.Sql
-import HSql.Core.Decoder
-import HSql.Core.Encoder
+import HSql.Core.Decoder (DefDec)
+import HSql.Core.Encoder (DefEnc,Enc)
 import HSql.Core.VinylUtils
-import Control.Arrow
+import Control.Arrow ((&&&))
 import Data.Vinyl
 import GHC.Stack
 import Data.Text.Lazy.Builder (fromText)
-import Language.Haskell.TH.Syntax -- (Lift)
-import qualified Language.Haskell.TH.Syntax as TH
+import qualified Language.Haskell.TH.Syntax as TH (runIO,lift)
 import Database.MSSql
 
 type instance WriteableDB (DBMS Writeable) = 'True
@@ -52,7 +51,7 @@ connCSharpText DBMS {..} = T.unpack [st|Server=#{_msserver};Database=#{_msdb};#{
 
 instance GConn (DBMS a) where
   loadConnTH _ k = do
-    c <- runIO $ loadConn @(DBMS a) k
+    c <- TH.runIO $ loadConn @(DBMS a) k
     TH.lift c
 
   ignoreDisconnectError _ = True
