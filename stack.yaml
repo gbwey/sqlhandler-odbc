@@ -10,6 +10,7 @@ extra-deps:
 - dhall-1.32.0
 - prettyprinter-1.6.1@sha256:11876ec94a79048e1d2942a99bfaa6f2be5222eafeedac6a9545673a79465009,5459
 - smtp-mail-0.2.0.0
+- chimera-0.3.1.0
 - ../database
 - ../logging
 - ../hdbc-odbc2
