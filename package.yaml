@@ -1,7 +1,9 @@
 name: sqlhandler-odbc
 version: '0.1.0.0'
-author: Grant Weyburne
-maintainer: gbwey9@gmail.com
+github:              gbwey/sqlhandler-odbc
+author: gbwey
+maintainer: gbwey
+copyright:           2019 Grant Weyburne
 license: BSD3
 # stack ghci --test --flag sqlhandler-odbc:my
 flags:
