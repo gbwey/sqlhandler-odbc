@@ -19,6 +19,8 @@ import TestConnections
 import Data.Time
 import Predicate
 import Predicate.Refined
+import Predicate.Refined2
+import Predicate.Examples.Refined2
 import Predicate.Refined3
 import Predicate.Examples.Refined3
 import GHC.TypeLits (Nat)
