@@ -9,5 +9,5 @@ in {
    , nodict = [] : List DictT
    , DictT
    , kv
-
+   , backslash = "\u005c"
    }

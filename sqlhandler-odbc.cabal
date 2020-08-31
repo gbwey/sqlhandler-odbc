@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 434b77db64ac8e5ae80a8c01336d567bd80bdce0d2c349b9cd5810bcbd63d904
+-- hash: 468e2ff705271324404eef89a63a7341edec9368b21317f72509e4d0dfb23eac
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -110,6 +110,7 @@ library
     , text
     , these >=1.0.0
     , time
+    , transformers
     , typelevel
     , unix-time >=0.4.6
     , unliftio
@@ -171,6 +172,7 @@ test-suite spec
     , text
     , these >=1.0.0
     , time
+    , transformers
     , typelevel
     , unix-time >=0.4.6
     , unliftio

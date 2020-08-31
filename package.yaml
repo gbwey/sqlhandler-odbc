@@ -58,6 +58,7 @@ dependencies:
 - text
 - these >= 1.0.0
 - time
+- transformers
 - typelevel
 - unix-time >= 0.4.6
 - unliftio

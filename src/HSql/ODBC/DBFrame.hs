@@ -73,6 +73,7 @@ insertFrameLoad :: forall db m e rs t
     -> m ()
 insertFrameLoad cre db tab ff = do
   case cre of
+    DropCreateTable -> runSql_ db RNil $ createFrameSql @db @rs tab -- could also drop the table ... but dangerous
     CreateTable -> runSql_ db RNil $ createFrameSql @db @rs tab
     SkipCreate -> return ()
   let ins = insertFrameSql tab ff

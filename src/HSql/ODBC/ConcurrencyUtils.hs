@@ -156,8 +156,8 @@ threadedForM _ _ [] _ = $logWarn "threadedForM: nothing to do!" >> return []
 threadedForM pl th@ThreadPool {..} xs act = do
   (NC n,ov) <- liftIO $ getNumThreads thOverride
   when (length xs < ov) $ $logWarn [st|threadedForM: more threads than tasks!! tasks=#{length xs} threads=#{ov}|]
-  if n==1
-  then timeCommand [st|threadedForM UNTHREADED Capabilities=#{n}|] (zip [1..] <$> zipWithM act [1..] xs)
+  if ov==1
+  then timeCommand [st|threadedForM UNTHREADED Capabilities=#{n} using #{ov}|] (zip [1..] <$> zipWithM act [1..] xs)
   else timeCommand [st|threadedForM Capabilities=#{n} using #{ov} #{show pl} #{show th}|] $
           case pl of
             PoolUnliftIO -> UA.pooledMapConcurrentlyN         ov (\(i,j) -> (i,) <$> act i j) (zip [1::Int ..] xs)

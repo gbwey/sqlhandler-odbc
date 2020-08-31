@@ -175,8 +175,9 @@ mssql x w = mkSql x ("set arithabort on;\n" <> w)
 mssql' :: forall b a db . Text -> Rec Enc a -> Rec SingleIn b -> Text -> Sql (DBMS db) a b
 mssql' x y z w = Sql x y z ("set arithabort on;\n" <> w)
 
-type PKeysMSSQL db = F '["tab" ::: Table (DBMS db), "pkname" ::: Text, "fillfactor" ::: Int, "itype" ::: Text, "cnames" ::: Text]
 
+--type PKeysMSSQL db = F '["tab" ::: Table (DBMS db), "pkname" ::: Text, "fillfactor" ::: Int, "itype" ::: Text, "cnames" ::: Text]
+{-
 getPrimaryKeysMS :: GConn (DBMS db) => Sql (DBMS db) '[] '[Sel (PKeysMSSQL db)]
 getPrimaryKeysMS = mkSql "getPrimaryKeysMS" [st|
 with A as (
@@ -210,6 +211,31 @@ select top 1000000000
  , 1, 1, ''))
  from A p
 group by SchemaName, TableName, pkname, p.fill_factor, p.type_desc
+|]
+-}
+
+type PKeysMSSQL db = F '["tab" ::: Table (DBMS db), "pkname" ::: Text, "cname" ::: Text, "key_ordinal" ::: Int, "fillfactor" ::: Int, "type_desc" ::: Text]
+
+getPrimaryKeysMS :: GConn (DBMS db) => Sql (DBMS db) '[] '[Sel (PKeysMSSQL db)]
+getPrimaryKeysMS = mkSql "getPrimaryKeysMS" [st|
+select
+   schema_name(ta.schema_id) + '.' + ta.name as tab
+  ,ind.name as pkname
+  ,col.name  cname
+  ,indcol.key_ordinal
+  ,ind.fill_factor
+  ,ind.type_desc
+ from sys.tables ta
+  inner join sys.indexes ind
+   on ind.object_id = ta.object_id
+  inner join sys.index_columns indcol
+   on indcol.object_id = ta.object_id
+    and indcol.index_id = ind.index_id
+  inner join sys.columns col
+   on col.object_id = ta.object_id
+    and col.column_id = indcol.column_id
+ where ind.is_primary_key = 1
+ order by tab, pkname,indcol.key_ordinal
 |]
 
 data Clustered = Clustered | NonClustered deriving (Show,Eq)
