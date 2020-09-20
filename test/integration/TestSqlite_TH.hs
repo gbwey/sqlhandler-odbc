@@ -46,7 +46,7 @@ $(genSql "s3_4" s3W (const "select count(*) as cnt1 from mixed"))
 s3_3TEST :: Sql (DBSqlite a) '[] '[Sel (Int,Double,UTCTime,String)]
 s3_3TEST = mkSql' "select * from mixed"
 
-s3_3TEST1 :: Sql (DBSqlite a) '[] '[Sel (Int, Refined OA (Between 0 500 (Ceiling Int Id)) Double, UTCTime, String)]
+s3_3TEST1 :: Sql (DBSqlite a) '[] '[Sel (Int, Refined OA (Between 0 500 (Ceiling Int)) Double, UTCTime, String)]
 s3_3TEST1 = mkSql' "select * from mixed"
 
 s3_CARD' :: Sql (DBSqlite a) '[] '[Sel (Int, String, R2.MakeR2 (R2.Luhn OA 11), R2.MakeR2 (R2.BaseN OA 16), R2.MakeR2 (R2.DateTimeN OA))]
@@ -70,9 +70,9 @@ s3_CARD2 = mkSql' "select * from cardinfo where id <> 7"
 
 type DateTimeN1 opts =
   '( opts
-  , ParseTimeP UTCTime "%Y-%m-%d %H:%M:%S" Id
+  , ParseTimeP UTCTime "%Y-%m-%d %H:%M:%S"
   , 'True
-  , FormatTimeP "%Y-%m-%d %H:%M:%S" Id, String)
+  , FormatTimeP "%Y-%m-%d %H:%M:%S", String)
 
 s3_test0 :: Sql (DBSqlite a) '[] '[Sel (Int, String)]
 s3_test0 = mkSql' "select 1234 as intvalue, 'some text' as txtvalue"
@@ -102,7 +102,7 @@ union all select '6433-1000-006', 'ffff', 'September 18 2012 23:01:03', '1111010
   |]
 
 
-type FromSeconds (opts :: Opt) (t :: Type) = '(opts, ShowP Id >> ParseTimeP t "%s" Id, 'True, FormatTimeP "%s" Id >> ReadP Integer Id, Integer)
+type FromSeconds (opts :: Opt) (t :: Type) = '(opts, ShowP Id >> ParseTimeP t "%s", 'True, FormatTimeP "%s" >> ReadP Integer Id, Integer)
 {-
 :l test\integration\TestSqlite_TH.hs test\integration\TestConnections.hs
 a <- fd $ runSql s3W RNil s3_CARD
