@@ -3,6 +3,8 @@
 {-# OPTIONS -Wno-redundant-constraints #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
@@ -809,10 +811,9 @@ stringToByteString :: String -> ByteString
 stringToByteString = TE.encodeUtf8 . T.pack
 
 newtype AppM e m a = AppM { unAppM :: ReaderT e (LoggingT m) a }
-  deriving (Monad, Applicative, Functor, MonadLoggerIO, MonadIO, MonadLogger, MonadReader e)
-
-instance MonadTrans (AppM e) where
-  lift = AppM . lift . lift
+  deriving newtype (Monad, Applicative, Functor, MonadLoggerIO, MonadIO, MonadLogger, MonadReader e)
+  deriving MonadTrans via (AppM e)
+--  deriving newtype (MonadUnliftIO (AppM e m))
 
 instance MonadUnliftIO m => MonadUnliftIO (AppM e m) where
   askUnliftIO = AppM (fmap (\(UnliftIO run) -> UnliftIO (run . unAppM)) askUnliftIO)
