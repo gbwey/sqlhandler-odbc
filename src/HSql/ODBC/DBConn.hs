@@ -48,7 +48,7 @@ import Control.Monad
 import qualified Database.HDBC as H
 import qualified Database.HDBC.ODBC as H
 import Database.HDBC (SqlValue(..))
-import Data.List
+import Data.List (sortOn, intersectBy, groupBy, sort, maximumBy, partition)
 import Control.Arrow ((&&&),(***))
 import qualified Control.Exception as E
 import Data.ByteString (ByteString)
@@ -80,7 +80,7 @@ import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
 import Logging -- (ML, GBException(..), newline)
 import qualified Data.List.NonEmpty as N
-import Control.Monad.IO.Unlift (UnliftIO(..), MonadUnliftIO(..))
+import Control.Monad.IO.Unlift (MonadUnliftIO(..))
 import Control.Monad.Reader
 import Debug.Trace
 
@@ -107,20 +107,20 @@ data CreateTable = DropCreateTable | CreateTable | SkipCreate deriving (Show,Eq)
 instance ToText CreateTable where
   toText = fromText . T.pack . show
 
--- |'RunSqlOK' checks to see that we are not trying to write to a readonly database
+-- | 'RunSqlOK' checks to see that we are not trying to write to a readonly database
 type RunSqlOk b db =
   P.FailUnless
     (P.Impl (Sql.WriteableRS b) (Sql.WriteableDB db))
     ('Text "Readonly database does not allow Upd") P.Mempty
 
--- |'TSql' has a list of constraints for that need to be fulfilled by runSql*
+-- | 'TSql' has a list of constraints for that need to be fulfilled by runSql*
 type TSql b a = (VT.RecAll Sql.RState b Sql.SingleZ
                , V.ReifyConstraint Show V.Identity a
                , V.RecordToList a
                , V.RMap a
                , Sql.ValidateNested b)
 
--- |'runSql' executes the sql for typed input and output
+-- | 'runSql' executes the sql for typed input and output
 runSql :: (TSql b a
          , ML e m
          , GConn db
@@ -132,7 +132,7 @@ runSql :: (TSql b a
         -> m (Rec Sql.RState b)
 runSql = runSqlUnsafe
 
--- |'runSql_' is the same as 'runSql' but throws away the output
+-- | 'runSql_' is the same as 'runSql' but throws away the output
 runSql_ :: (TSql b a
          , ML e m
          , GConn db
@@ -816,7 +816,7 @@ newtype AppM e m a = AppM { unAppM :: ReaderT e (LoggingT m) a }
 --  deriving newtype (MonadUnliftIO (AppM e m))
 
 instance MonadUnliftIO m => MonadUnliftIO (AppM e m) where
-  askUnliftIO = AppM (fmap (\(UnliftIO run) -> UnliftIO (run . unAppM)) askUnliftIO)
+--  askUnliftIO = AppM (fmap (\(UnliftIO run) -> UnliftIO (run . unAppM)) askUnliftIO)
   withRunInIO go = AppM (withRunInIO (\k -> go (k . unAppM)))
 
 -- >fd $ unAppM $ runSqlX s3W RNil s3_test0
@@ -854,7 +854,7 @@ class HSql m where
      -> Sql db a b
      -> m (Rec Sql.RState b)
 
--- |'runSql_' is the same as 'runSql' but throws away the output
+  -- | 'runSqlX_' is the same as 'runSql' but throws away the output
   runSqlX_ :: (TSql b a
          , GConn db
          , RunSqlOk b db

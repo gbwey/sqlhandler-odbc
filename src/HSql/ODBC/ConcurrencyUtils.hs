@@ -38,8 +38,10 @@ import Logging (ML,GBException(..),timeCommand)
 import GHC.Stack (HasCallStack)
 import qualified Dhall as D (FromDhall)
 import GHC.Generics as G (Generic)
+import Control.DeepSeq (NFData)
 
-newtype ThreadPool = ThreadPool { thOverride :: Maybe Int } deriving (Show,Eq)
+newtype ThreadPool = ThreadPool { thOverride :: Maybe Int } deriving (Show,Eq, G.Generic)
+instance NFData ThreadPool
 
 newtype NC = NC { unNC :: Int } deriving (Show,ToText)
 
@@ -48,9 +50,11 @@ data StreamConcurrency = StreamConcurrency
     , _sNumBatches :: !(Maybe Int) -- divide work into x units: dont need to set this as will default to number of threads above: if you have 5 threads and 30 batches then will divvy up the work to keep filling up the threads
     , _sPcntOrTxnCnt :: !Int -- width of insert OR number of rows/blocks per txn commit
     , _sOneInsert :: !Int -- how many rows in one individual insert statement -- defaults to 1
-    } deriving (Show, Eq)
+    } deriving (Show, Eq, G.Generic)
 
 makeLenses ''StreamConcurrency
+
+instance NFData StreamConcurrency
 
 instance ToText StreamConcurrency where
   toText = fromText . T.pack . show
@@ -76,7 +80,7 @@ paditC pcnt (length &&& id -> (len, x)) =
              return (x <> replicate (pcnt - len) SqlNull)
 
 convertUsingMeta :: HasCallStack => (ColDataType, ColumnMeta) -> SqlValue -> SqlValue
-convertUsingMeta (cd, ColumnMeta{..}) a = case a of
+convertUsingMeta (cd, ColumnMeta{}) a = case a of
   SqlByteString bs -> case cd of
                         CFixedString -> SqlString $ B8.unpack bs
                         CString      -> SqlString $ B8.unpack bs
@@ -145,6 +149,8 @@ data PoolStrategy =
      PoolUnliftIO
    | PoolCustom
    deriving (Show,Eq,G.Generic)
+
+instance NFData PoolStrategy
 
 instance D.FromDhall PoolStrategy
 

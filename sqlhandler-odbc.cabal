@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 468e2ff705271324404eef89a63a7341edec9368b21317f72509e4d0dfb23eac
+-- hash: b9e0d4352f5b42b3ba11179f8372261151539cfaa0e3597222b36bbb4b6d6725
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -86,6 +86,7 @@ library
     , bytestring
     , containers
     , database
+    , deepseq
     , dhall >=1.32.0
     , directory
     , either
@@ -143,6 +144,7 @@ test-suite spec
     , bytestring
     , containers
     , database
+    , deepseq
     , dhall >=1.32.0
     , directory
     , either

@@ -63,7 +63,7 @@ select case
 
   getColumnMetaSql _ t = (slType, getSLColumnMetaSql t)
 
-  translateColumnMeta _ (cd, ColumnMeta {..}) =
+  translateColumnMeta _ z@(cd, _) =
      case cd of
        CString -> "varchar"
        CFixedString -> "char"
@@ -75,7 +75,7 @@ select case
        CBLOB -> "blob"
        CCLOB -> "clob"
        CBinary -> "varchar"
-       COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to mssql " ++ show o
+       COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to mssql " ++ show o ++ " z=" ++ show z
   limitSql _ = maybe mempty (\n -> [st|limit #{n}|])
 
 data LiteMeta = LiteMeta { tpos :: !Int

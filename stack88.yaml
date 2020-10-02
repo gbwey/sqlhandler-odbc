@@ -3,11 +3,10 @@ packages:
 - '.'
 extra-deps:
 - pretty-terminal-0.1.0.0
-- tree-view-0.5
 - ../Frames
 - discrimination-0.4
 - symbols-0.3.0.0
-- dhall-1.32.0
+- dhall-1.35.0
 - prettyprinter-1.6.1@sha256:11876ec94a79048e1d2942a99bfaa6f2be5222eafeedac6a9545673a79465009,5459
 - smtp-mail-0.2.0.0
 - chimera-0.3.1.0

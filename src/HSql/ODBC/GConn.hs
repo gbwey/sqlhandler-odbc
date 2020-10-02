@@ -62,6 +62,7 @@ import qualified Language.Haskell.TH as TH (Q,Exp)
 import qualified Dhall as D (FromDhall,input,auto)
 import Database.Util
 import Logging (trim)
+import Control.DeepSeq (NFData)
 
 loadConn :: forall a . D.FromDhall a => Text -> IO a
 loadConn key = D.input D.auto ("let x = ./conn.dhall in x." <> key)
@@ -72,12 +73,16 @@ data ReadOnly
 data Schema = ConnSchema | Schema !(Maybe Text) deriving (Show,Eq,Ord,G.Generic)
 $(makePrisms ''Schema)
 
+instance NFData Schema
+
 data Table a = Table {
                  _tDb :: !(Maybe Text)
                , _tSchema :: !Schema
                , _tName :: !Text
                , _tTable :: !Bool
                } deriving (Show, Eq, Ord, Functor, G.Generic)
+
+instance NFData a => NFData (Table a)
 
 instance GS.Generic (Table a)
 instance GS.HasDatatypeInfo (Table a)
@@ -181,7 +186,9 @@ data ColDataType =
  | CBinary
  | CCLOB
  | CBLOB
- | COther !Text deriving (Show, Eq, Ord)
+ | COther !Text deriving (Show, Eq, Ord, G.Generic)
+
+instance NFData ColDataType
 
 instance FromField ColDataType where
   fromField = pure . show
@@ -198,6 +205,8 @@ data ColumnMeta = ColumnMeta {
  , cPkey :: !Int
  } deriving (Show, Eq, G.Generic)
 
+instance NFData ColumnMeta
+
 instance GS.Generic ColumnMeta
 instance GS.HasDatatypeInfo ColumnMeta
 
@@ -213,7 +222,8 @@ unsafeCastTableWithDB db Table {..} = Table (getDb db) (Schema (getSchema db)) _
 showTable :: GConn a => Table a -> Text
 showTable t = showTableImpl (getDelims t) t
 
-newtype LogId = LogId { unLogId :: Int } deriving (Show,Eq,Num,Enum,ToText)
+newtype LogId = LogId { unLogId :: Int } deriving (Show, Eq, Num, Enum, ToText, G.Generic)
+instance NFData LogId
 
 showTableForBCP :: Table a -> LogId -> String
 showTableForBCP Table {..} lid =
