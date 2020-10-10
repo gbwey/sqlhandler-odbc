@@ -1,6 +1,11 @@
 -- could generate insert statements based on metadata (skip identity computed fields etc) and refined types on columns (not so useful as the data is dynamic)
 -- add filter on column names and column type
-{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
+{-# OPTIONS -Wall #-}
+{-# OPTIONS -Wcompat #-}
+{-# OPTIONS -Wincomplete-record-updates #-}
+{-# OPTIONS -Wincomplete-uni-patterns #-}
+{-# OPTIONS -Wunused-type-patterns #-}
+{-# OPTIONS -Wredundant-constraints #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE DataKinds #-}
@@ -202,7 +207,7 @@ genSqlLRWith opts@GenOpts {..} fn db sql = do
             Left e -> UE.throwIO e
             Right smds -> return smds
   let nm = mkName fn
-  let z = foldr (\a b -> AppT (AppT PromotedConsT (createSignatureFromMeta _goSel a)) b) PromotedNilT xxs
+  let z = foldr (AppT . AppT PromotedConsT . createSignatureFromMeta _goSel) PromotedNilT xxs
   -- this works but dont gain a lot : cant splice in the name of a function in the type declaration
   -- we can splice the name for the value itself
   -- aa :: ... [aa cannot be spliced!] but aa = [here the aa can be spliced
@@ -272,7 +277,7 @@ genTypeList' sel fn db sqlfn = do
           case getSqlMetasHdbc id m of
             Left e -> UE.throwIO e
             Right smds -> return smds
-  let z = foldr (\a b -> AppT (AppT PromotedConsT (createSignatureFromMeta sel a)) b) PromotedNilT xxs
+  let z = foldr (AppT . AppT PromotedConsT . createSignatureFromMeta sel) PromotedNilT xxs
   return [TySynD (mkName fn) [] z]
 
 -- | 'genTypeFirst' creates a type synonym of the form Sel (Rec ElField '[...])

@@ -1,4 +1,9 @@
-{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
+{-# OPTIONS -Wall #-}
+{-# OPTIONS -Wcompat #-}
+{-# OPTIONS -Wincomplete-record-updates #-}
+{-# OPTIONS -Wincomplete-uni-patterns #-}
+{-# OPTIONS -Wunused-type-patterns #-}
+{-# OPTIONS -Wredundant-constraints #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -117,9 +122,14 @@ getSqlMetaHdbc  fn i meta = do
   return (T.unpack nm', t, b)
 
 -- | 'getCleanName' creates a valid 'TH.Name' that will work with labels and makes the fields unique
-getCleanName :: (E.MonadError SqlTHException m, S.MonadState (Set Text) m) => (Text -> Text) -> Int -> Maybe Text -> m Text
+getCleanName :: ( E.MonadError SqlTHException m
+                , S.MonadState (Set Text) m
+                ) => (Text -> Text)
+                  -> Int
+                  -> Maybe Text
+                  -> m Text
 getCleanName fn i mt =
-  case maybe Nothing cleanName (fn <$> mt) of
+  case  (fn <$> mt) >>= cleanName of
     Nothing -> tryout 2 ("anon_" <> T.pack (show i))
     Just t1 -> tryout 3 t1
 
