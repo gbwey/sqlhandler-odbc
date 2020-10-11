@@ -1,5 +1,4 @@
 -- if you have an old version of mssql and cant use genMS*
-{-# OPTIONS -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints #-}
 {-# OPTIONS -Wno-unused-imports #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE QuasiQuotes #-}

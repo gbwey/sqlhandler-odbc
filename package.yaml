@@ -67,7 +67,7 @@ dependencies:
 - uuid
 - vinyl >= 0.10.0.0
 
-default-extensions: TemplateHaskell
+default-extensions: []
 library:
   source-dirs: src
   ghc-options:
@@ -75,8 +75,8 @@ library:
   - -Wcompat
   - -Wincomplete-record-updates
   - -Wincomplete-uni-patterns
-  - -Wredundant-constraints
-#  - -fomit-interface-pragmas
+  - -Wpartial-fields
+  - -Wunused-type-patterns
   when:
      condition: impl(ghc >= 8.8)
      ghc-options:
@@ -92,7 +92,12 @@ tests:
     ghc-options:
     - -threaded
     - -O0
-#    - -fomit-interface-pragmas
+    - -Wall
+    - -Wcompat
+    - -Wincomplete-record-updates
+    - -Wincomplete-uni-patterns
+    - -Wpartial-fields
+    - -Wunused-type-patterns
     source-dirs:
     - test/integration
     - test/unit

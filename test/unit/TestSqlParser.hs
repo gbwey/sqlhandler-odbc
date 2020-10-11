@@ -1,7 +1,3 @@
-{-# OPTIONS -Wall #-}
-{-# OPTIONS -Wcompat #-}
-{-# OPTIONS -Wincomplete-record-updates #-}
-{-# OPTIONS -Wincomplete-uni-patterns #-}
 {-# OPTIONS -Wno-redundant-constraints #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}

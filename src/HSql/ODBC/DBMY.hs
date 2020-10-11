@@ -1,11 +1,5 @@
 -- multiple result sets work with semicolon delimiters but cant get them to work when using placeholders ie ?
 -- they work with inserts selects etc!!! ;option=67108864 [[without placeholders only!]]
-{-# OPTIONS -Wall #-}
-{-# OPTIONS -Wcompat #-}
-{-# OPTIONS -Wincomplete-record-updates #-}
-{-# OPTIONS -Wincomplete-uni-patterns #-}
-{-# OPTIONS -Wunused-type-patterns #-}
-{-# OPTIONS -Wredundant-constraints #-}
 {-# OPTIONS -Wno-orphans #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}

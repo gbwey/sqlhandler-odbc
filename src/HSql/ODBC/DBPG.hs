@@ -1,11 +1,5 @@
 -- using getPGTableCountsSql instead for counts of tables cos no roundtripping needed and is fast!
 -- multiple resultsets work great with postgres
-{-# OPTIONS -Wall #-}
-{-# OPTIONS -Wcompat #-}
-{-# OPTIONS -Wincomplete-record-updates #-}
-{-# OPTIONS -Wincomplete-uni-patterns #-}
-{-# OPTIONS -Wunused-type-patterns #-}
-{-# OPTIONS -Wredundant-constraints #-}
 {-# OPTIONS -Wno-orphans #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
