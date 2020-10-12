@@ -7,6 +7,7 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE NoStarIsType #-}
 module Main where
 import HSql.ODBC.DBConn
 import HSql.ODBC.Sql_TH

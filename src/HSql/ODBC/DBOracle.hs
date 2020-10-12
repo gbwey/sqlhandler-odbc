@@ -12,6 +12,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE NoStarIsType #-}
 {- |
 Module      : HSql.ODBC.DBOracle
 Description : Oracle

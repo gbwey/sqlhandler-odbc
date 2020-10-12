@@ -21,6 +21,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE NoStarIsType #-}
 {- |
 Module      : HSql.ODBC.DBConn
 Description : Contains methods for running sql against databases

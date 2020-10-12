@@ -17,6 +17,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE NoStarIsType #-}
 {-|
 Module      : HSql.ODBC.GConn
 Description : Contains GConn class

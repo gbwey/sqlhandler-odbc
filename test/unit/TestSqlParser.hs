@@ -1,9 +1,9 @@
-{-# OPTIONS -Wno-redundant-constraints #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE NoStarIsType #-}
 module TestSqlParser where
 import HSql.ODBC.SqlParser
 import Text.Regex.Applicative
@@ -29,10 +29,10 @@ suite = testGroup "TestSqlParser"
   , testCase "sqlparser.ex11" $ (@?=) (stripQuotes (Just ('[',']')) "'hello'") "'hello'"
   ]
 
-expectAll' :: (Show a, Show a1, Eq a, Eq a1) => a1 -> (a -> a1) -> [a] -> IO ()
+expectAll' :: (Show a, Show a1, Eq a1) => a1 -> (a -> a1) -> [a] -> IO ()
 expectAll' w p = expectAll (liftMaybe w . p)
 
-expectAll :: (Eq a, Show a, HasCallStack, Show b) => (a -> Either b ()) -> [a] -> IO ()
+expectAll :: (Show a, HasCallStack, Show b) => (a -> Either b ()) -> [a] -> IO ()
 expectAll p as = case lefts (map (\a -> left (a,) (p a)) as) of
                    [] -> pure ()
                    xs@(_:_) -> assertFailure $ "expected all to succeed but " <> show (length xs) <> " failed " <> show xs

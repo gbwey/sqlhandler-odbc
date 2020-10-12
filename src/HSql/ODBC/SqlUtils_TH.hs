@@ -10,6 +10,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE NoStarIsType #-}
 {- |
 Module      : HSql.ODBC.SqlUtils_TH
 Description : Utilties for 'Sql_TH'

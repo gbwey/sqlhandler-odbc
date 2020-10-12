@@ -11,6 +11,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE NoStarIsType #-}
 {- |
 Module      : HSql.ODBC.Sql_TH
 Description : Template haskell for generating Sql and Sql signatures

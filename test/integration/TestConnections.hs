@@ -19,6 +19,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE NoStarIsType #-}
 module TestConnections where
 import Data.Text (Text)
 import HSql.ODBC.GConn

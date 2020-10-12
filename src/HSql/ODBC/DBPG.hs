@@ -18,6 +18,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE NoStarIsType #-}
 {- |
 Module      : HSql.ODBC.DBPG
 Description : Postgres

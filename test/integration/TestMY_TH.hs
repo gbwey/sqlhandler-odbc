@@ -8,6 +8,7 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE NoStarIsType #-}
 module TestMY_TH where
 import HSql.ODBC.DBConn
 import HSql.ODBC.Sql_TH

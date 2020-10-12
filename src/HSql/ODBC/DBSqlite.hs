@@ -20,6 +20,7 @@ Implementation of GConn for sqlite.
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE NoStarIsType #-}
 module HSql.ODBC.DBSqlite where
 import Prelude hiding (FilePath)
 import Text.Shakespeare.Text (st)

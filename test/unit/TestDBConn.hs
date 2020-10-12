@@ -4,6 +4,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NoStarIsType #-}
 module TestDBConn where
 import Test.Tasty
 import Test.Tasty.HUnit

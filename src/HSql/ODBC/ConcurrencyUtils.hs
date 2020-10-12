@@ -14,6 +14,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE NoStarIsType #-}
 module HSql.ODBC.ConcurrencyUtils where
 import Control.Monad.Logger
 import Control.Monad.IO.Class (liftIO,MonadIO)

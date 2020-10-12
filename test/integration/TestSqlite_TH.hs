@@ -9,6 +9,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE NoStarIsType #-}
 module TestSqlite_TH where
 import HSql.ODBC.DBConn
 import HSql.ODBC.Sql_TH
