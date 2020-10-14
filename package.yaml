@@ -83,6 +83,7 @@ library:
      ghc-options:
      - -fwrite-ide-info
      - -hiedir=.hie
+     - -Widentities
   other-modules: []
   dependencies:
   - base >=4.7 && <=5.1
@@ -133,6 +134,7 @@ tests:
       ghc-options:
       - -fwrite-ide-info
       - -hiedir=.hie
+      - -Widentities
 
 data-files:
 - conn.dhall
