@@ -27,7 +27,6 @@ Module      : HSql.ODBC.DBConn
 Description : Contains methods for running sql against databases
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
-Maintainer  : gbwey9@gmail.com
 
 Generic methods for running sql / comparing databases / printing and logging.
 -}
@@ -311,12 +310,8 @@ allTablesCount p db =
     Nothing -> do
       ts <- allTables p db
       forM ts $ \t -> do
-        lrn <- UE.try $ getOneTableRowCount db t
-        case lrn of
-          Left (e :: UE.SomeException) -> do
-                  $logWarn [st|allTablesAndViewsCount: ignoring exception #{show e}|]
-                  return (t,-1,Nothing,Nothing)
-          Right n -> return (t,n,Nothing,Nothing)
+        n <- getOneTableRowCount db t -- removed catch exception:do we still need it?
+        return (t,n,Nothing,Nothing)
 
 allViews :: (GConn a, ML e m)
   => (Table a -> Bool)

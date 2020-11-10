@@ -17,7 +17,6 @@ Module      : HSql.ODBC.Sql_TH
 Description : Template haskell for generating Sql and Sql signatures
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
-Maintainer  : gbwey9@gmail.com
 
 This is very experimental
 -}

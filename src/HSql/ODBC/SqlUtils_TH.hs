@@ -16,7 +16,6 @@ Module      : HSql.ODBC.SqlUtils_TH
 Description : Utilties for 'Sql_TH'
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
-Maintainer  : gbwey9@gmail.com
 
 Template haskell utility functions for 'SQL_TH'
 -}

@@ -22,13 +22,13 @@ import Control.Monad (when,unless,void,zipWithM)
 import Text.Shakespeare.Text (ToText(toText),st)
 import qualified Data.Text as T
 import qualified Data.Text.Read as TR (decimal,double)
-import qualified Data.Text.Encoding as TE (decodeUtf8)
+import qualified Data.Text.Encoding as TE (decodeUtf8')
 import Database.HDBC (SqlValue(..))
 import qualified Data.ByteString.Char8 as B8 (unpack)
 import HSql.ODBC.GConn
 import Control.Lens (makeLenses)
 import Data.Text.Lazy.Builder (fromText)
-import Control.Arrow ((&&&))
+import Control.Arrow ((&&&),left)
 import Data.List (delete, sortOn)
 import Control.Concurrent (getNumCapabilities)
 import Data.Maybe (fromMaybe)
@@ -84,18 +84,18 @@ convertUsingMeta (cd, ColumnMeta{}) a = case a of
   SqlByteString bs -> case cd of
                         CFixedString -> SqlString $ B8.unpack bs
                         CString      -> SqlString $ B8.unpack bs
-                        CInt         -> case TR.decimal (TE.decodeUtf8 bs) of
+                        CInt         -> case TR.decimal =<< left show (TE.decodeUtf8' bs) of
                                           Right (d,e) | T.null e -> SqlInteger d
                                                      | otherwise -> error $ "convertUsingMeta: CInt " ++ show (d,e) ++ " bs=" ++ show bs
                                           Left e -> error $ "convertUsingMeta: CInt failed e=" ++ e
                         CDateTime    -> error $ "convertUsingMeta: unsupported type " ++ show cd ++ " bs=" ++ show bs
                         CDate        -> error $ "convertUsingMeta: unsupported type " ++ show cd ++ " bs=" ++ show bs
-                        CFloat       -> case TR.double (TE.decodeUtf8 bs) of
+                        CFloat       -> case TR.double =<< left show (TE.decodeUtf8' bs) of
                                           Right (d,e) | T.null e -> SqlDouble d
                                                      | otherwise -> error $ "convertUsingMeta: CFloat " ++ show (d,e) ++ " bs=" ++ show bs
                                           Left e -> error $ "convertUsingMeta: CFloat failed e=" ++ e
 
-                        CBool        -> case TR.decimal (TE.decodeUtf8 bs) of
+                        CBool        -> case TR.decimal =<< left show (TE.decodeUtf8' bs) of
                                           Right (d,e) | T.null e -> SqlInt32 d
                                                      | otherwise -> error $ "convertUsingMeta: CBool " ++ show (d,e) ++ " bs=" ++ show bs
                                           Left e -> error $ "convertUsingMeta: CBool failed e=" ++ e

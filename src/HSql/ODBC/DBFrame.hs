@@ -18,7 +18,6 @@ Module      : HSql.ODBC.DBFrame
 Description : Convenience methods for reading and writing a frame to a database
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
-Maintainer  : gbwey9@gmail.com
 -}
 module HSql.ODBC.DBFrame where
 import Data.Time (UTCTime,ZonedTime,LocalTime,Day)
