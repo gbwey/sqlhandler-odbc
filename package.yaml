@@ -36,7 +36,6 @@ dependencies:
 - deepseq
 - dhall >= 1.32.0
 - directory
-- either
 - formatting
 - Frames >= 0.6.1
 - generics-sop
@@ -46,14 +45,9 @@ dependencies:
 - logging
 - monad-logger
 - mtl
-- predicate-typed
 - regex-applicative
-- resourcet
-- safe
-- semigroups
 - shakespeare
 - sqlhandler
-- stm
 - tagged
 - template-haskell
 - text
@@ -61,7 +55,6 @@ dependencies:
 - time
 - transformers
 - typelevel
-- unix-time >= 0.4.6
 - unliftio
 - unliftio-core
 - uuid
@@ -73,17 +66,19 @@ library:
   ghc-options:
   - -Wall
   - -Wcompat
+  - -Wno-star-is-type
   - -Wincomplete-record-updates
   - -Wincomplete-uni-patterns
   - -Wpartial-fields
   - -Wunused-type-patterns
   - -Wredundant-constraints
   when:
-     condition: impl(ghc >= 8.8)
+   - condition: impl(ghc >= 8.8)
      ghc-options:
      - -fwrite-ide-info
      - -hiedir=.hie
      - -Widentities
+
   other-modules: []
   dependencies:
   - base >=4.7 && <=5.1
@@ -107,6 +102,7 @@ tests:
     dependencies:
       - base
       - sqlhandler-odbc
+      - predicate-typed
       - hspec
       - QuickCheck
       - tasty

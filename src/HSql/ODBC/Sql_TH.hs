@@ -171,7 +171,7 @@ liftSqlLR txt sql _ _ lr = lr (sql (const txt)) (sql id)
 getSqlLR :: FN3 -> (Text, Text)
 getSqlLR sql =
   let ll = sql id (const "") const -- uses the left and ignores data from the right
-      rr = sql (const "") id (flip const) -- vice versa
+      rr = sql (const "") id (const id) -- vice versa
   in (ll, rr)
 
 genSql :: GConn db => String -> db -> FN1 -> Q [TS.Dec]
