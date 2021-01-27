@@ -332,7 +332,7 @@ allTablesAndViews :: forall a m e . (GConn a, ML e m)
   -> m [Table a]
 allTablesAndViews tv p db = do
   vs <- Sql.ext <$> runSql db RNil ((if isTable tv then getAllTablesSql else getAllViewsSql) db)
-  return $ filter p $ map (\t -> t { _tTable = isTable tv }) vs
+  return $ filter p $ map (\t -> t { tTable = isTable tv }) vs
 
 -- can use with wprint
 getAllTablesSqlImpl :: forall db m e . (ML e m, GConn db)
@@ -404,7 +404,7 @@ compareDatabase :: (GConn a, GConn b, ML e m)
   -> b
   -> m [These (Table a, Int) (Table b, Int)]
 compareDatabase a b = do
-  let fn = T.toLower . _tName
+  let fn = T.toLower . tName
   x1 <- allTablesCount (const True) a
   x2 <- allTablesCount (const True) b
   let ret = compareDatabaseImpl fn fn x1 x2
@@ -485,7 +485,7 @@ logDatabaseImpl txt anydb (fmap (\(a,b,_,_) -> (a,b)) -> tps) =
          <> pure pad
          <> zipWith ff [1 :: Int ..] tps
          <> pure pad
-         <> zipWith ff [1 :: Int ..] (sortOn (\(x,y) -> (Down y, T.toLower (_tName x))) tps)
+         <> zipWith ff [1 :: Int ..] (sortOn (\(x,y) -> (Down y, T.toLower (tName x))) tps)
          <> pure [lt|end logDatabase [#{txt}] #{showDb anydb} #{length tps} tables|]
 
 prtDiff :: (GConn a, GConn b) => (TP, These (Table a) (Table b)) -> ((Int,These (Table a) (Table b)),TL.Text)
@@ -545,12 +545,12 @@ diffDatabase' :: (HasCallStack, GConn a, GConn b)
   -> [(Table b,Int,Maybe UTCTime,Maybe UTCTime)]
   -> [TL.Text]
 diffDatabase' xs ys =
-  let fmat = either (_tName . view _1) (_tName . view _1)
+  let fmat = either (tName . view _1) (tName . view _1)
       as = sortOn fmat (map Left xs <> map Right ys)
       bs = groupBy (on (==) fmat) as
       cs = flip map bs $ \x ->
               case sort x of
-                [Left (t1,n1,_,_),Right (t2,n2,_,_)] | _tName t1 /= _tName t2 -> error "difDatabase': mismatching names"
+                [Left (t1,n1,_,_),Right (t2,n2,_,_)] | tName t1 /= tName t2 -> error "difDatabase': mismatching names"
                                              | otherwise -> (handleBoth (n1,n2), These t1 t2)
                 [Left (t,n,_,_)]  -> (LeftOnly n,This t)
                 [Right (t,n,_,_)] -> (RightOnly n,That t)

@@ -6,7 +6,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE NoStarIsType #-}
@@ -32,11 +31,11 @@ $(genTypeFirst "MSOLD2" msW (\f -> [st|select #{f "top 4"} * from mixed where id
 
 $(genSql "msold1" msW (\f -> [st|select #{f "top 5"} * from mixed where 1=1 |]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer,Int] |], _goDBParam = ''ReadOnly } "msold2" msW (\f -> [st|select #{f ""} * from mixed where id in (?,?,?) |]))
+$(genSqlWith defGenOpts { goEnc = [t| '[Int,Integer,Int] |], goDBParam = ''ReadOnly } "msold2" msW (\f -> [st|select #{f ""} * from mixed where id in (?,?,?) |]))
 
 $(genSql "msold3" msW (\f -> [st|select #{f ""} count(*) as cnt1 from mixed |]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer] |], _goDBParam = ''Writeable } "msold4" msW (\f -> [st|select #{f ""} * from mixed where id between ? and ? |]))
+$(genSqlWith defGenOpts { goEnc = [t| '[Int,Integer] |], goDBParam = ''Writeable } "msold4" msW (\f -> [st|select #{f ""} * from mixed where id between ? and ? |]))
 
 -- gives more fine grained control for more complex sql: eg using ctes where you need to do interesting things
 $(genSqlLR "msold5" msW (\_ll _rr lr -> [st|select top #{lr "0" "5"} * from mixed where 1=1 |]))

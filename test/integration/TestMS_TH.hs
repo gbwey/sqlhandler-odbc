@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE NoStarIsType #-}
@@ -32,15 +31,15 @@ $(genMSType "MS2" msW (\f -> [st|select count(*), 'abc' as field2 from mixed whe
 ms1a :: Sql (DBMS Writeable) '[String,Int] '[SelOne MS2]
 ms1a = mkSql' "select count(*), 'abc' as field2 from mixed"
 
-$(genMSWith defGenOpts { _goDBParam = mkName "a", _goSel = ''Sel, _goEnc = [t| '[] |] } "ms1" msW (const "select top 10 * from mixed"))
+$(genMSWith defGenOpts { goDBParam = mkName "a", goSel = ''Sel, goEnc = [t| '[] |] } "ms1" msW (const "select top 10 * from mixed"))
 
-$(genMSWith defGenOpts { _goSel = ''SelOne } "ms2bad" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8,567.8z"))
-$(genMSWith defGenOpts { _goSel = ''SelOne, _goDBParam = ''Writeable } "ms3bad" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8"))
+$(genMSWith defGenOpts { goSel = ''SelOne } "ms2bad" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8,567.8z"))
+$(genMSWith defGenOpts { goSel = ''SelOne, goDBParam = ''Writeable } "ms3bad" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8"))
 
-$(genMSWith defGenOpts { _goSel = ''SelOne } "ms4" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8e,567.8e"))
-$(genMSWith defGenOpts { _goSel = ''SelOne, _goDBParam = ''Writeable } "ms5" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8e"))
+$(genMSWith defGenOpts { goSel = ''SelOne } "ms4" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8e,567.8e"))
+$(genMSWith defGenOpts { goSel = ''SelOne, goDBParam = ''Writeable } "ms5" msW (const "select 1 as ff,'fixedval1' as astring,cast (123.4 as float),567.8e"))
 
-$(genMSWith defGenOpts { _goDBParam = ''Writeable } "ms6" msW (const [st|
+$(genMSWith defGenOpts { goDBParam = ''Writeable } "ms6" msW (const [st|
   select top 10 a.*, o.id as otherid, o.total as othertotal, o.*
   from mixed a, mixed o
   where a.id=o.id
@@ -63,7 +62,7 @@ $(genMS "ms8" msW (mkName "a") [st|
 
 -- passing in parameters
 -- [t| Sql (DBMS a) '[String] (Sel x) |]
-$(genMSWith defGenOpts { _goEnc = [t| '[Int] |], _goDBParam = ''ReadOnly } "ms9" msW (\f -> [st|
+$(genMSWith defGenOpts { goEnc = [t| '[Int] |], goDBParam = ''ReadOnly } "ms9" msW (\f -> [st|
   select top 10 *
   from mixed a, mixed o
   where a.id = o.id
@@ -71,26 +70,26 @@ $(genMSWith defGenOpts { _goEnc = [t| '[Int] |], _goDBParam = ''ReadOnly } "ms9"
   order by o.id desc
   |]))
 
-$(genMSWith defGenOpts { _goSel = ''SelOne, _goNameFunc = id } "ms10" msW (const [st|
+$(genMSWith defGenOpts { goSel = ''SelOne, goNameFunc = id } "ms10" msW (const [st|
   select 'abc' as XYZ, 'def' as [    @$  aA], 'ghi', 'jkl' as XYZ, 'mno' as field1
   |]))
 
-$(genMSWith defGenOpts { _goSel = ''SelOne } "ms11" msW (const [st|
+$(genMSWith defGenOpts { goSel = ''SelOne } "ms11" msW (const [st|
   select 'abc' as XYZ, 'def' as [    @$  aA], 'ghi', 'jkl' as XYZ, 'mno' as field1
   |]))
 
 -- ms treats bit as bool but is Maybe cos looks like numbers are treated not null by default but strings seem fine
-$(genMSWith defGenOpts { _goSel = ''SelOne } "ms12" msW (const [st|
+$(genMSWith defGenOpts { goSel = ''SelOne } "ms12" msW (const [st|
   select cast(0 as bit),cast (1 as bit),2,3
   |]))
 
 -- a trick to make bool not null by wrapping in isnull (same with datetime): dont need to worry about strings
-$(genMSWith defGenOpts { _goSel = ''SelOne, _goDBParam = ''ReadOnly } "ms13" msW (const [st|
+$(genMSWith defGenOpts { goSel = ''SelOne, goDBParam = ''ReadOnly } "ms13" msW (const [st|
   select isnull(cast(0 as bit),0),isnull(cast (1 as bit),1),isnull(cast('2009-01-20' as datetime),0),'abc'
   |]))
 
 -- convert vs cast makes no diff
-$(genMSWith defGenOpts { _goSel = ''SelOne, _goDBParam = ''Writeable } "ms14" msW (const [st|
+$(genMSWith defGenOpts { goSel = ''SelOne, goDBParam = ''Writeable } "ms14" msW (const [st|
   select convert(bit,0), convert(bit,1), cast('2009-01-20' as datetime)
   |]))
 

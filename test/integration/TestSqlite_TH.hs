@@ -5,7 +5,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE GADTs #-}
@@ -31,9 +30,9 @@ import qualified Predicate.Examples.Refined3 as R3
 import GHC.TypeLits (Nat)
 import Data.Kind (Type)
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Integer,Int] |], _goDBParam = ''Writeable } "s3_1" s3W (\f -> [st|select * from mixed where id in (?,?,?) #{f ""}|]))
+$(genSqlWith defGenOpts { goEnc = [t| '[Int,Integer,Int] |], goDBParam = ''Writeable } "s3_1" s3W (\f -> [st|select * from mixed where id in (?,?,?) #{f ""}|]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int,Int] |] } "s3_2" s3W (\f -> [st|select * from mixed where id between ? and ? #{f ""}|]))
+$(genSqlWith defGenOpts { goEnc = [t| '[Int,Int] |] } "s3_2" s3W (\f -> [st|select * from mixed where id between ? and ? #{f ""}|]))
 
 -- cos of limit 0 on count it says it is a string so this dont work unless we drop the limit
 $(genSql "s3_3" s3W (\f -> [st|select * from mixed #{f "limit 10"}|]))

@@ -5,7 +5,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE NoStarIsType #-}
@@ -29,9 +28,9 @@ $(genSqlLR "my2" myW (\_ll _rr lr -> [st|select #{lr "1" "count(*)"} from mixed 
 $(genSqlLR "my3" myW (\_ll _rr lr -> lr "select count(*) as fred from mixed limit 0" "select count(*) from mixed"))
 
 -- fd $ runSql myW (I2 1 "C0001%") my20d
-$(genSqlLRWith defGenOpts { _goEnc = [t| '[Int,String] |] } "my4" myW (\_ll _rr lr -> lr "select * from mixed limit 0" "select * from mixed where id>? and description not like ?"))
+$(genSqlLRWith defGenOpts { goEnc = [t| '[Int,String] |] } "my4" myW (\_ll _rr lr -> lr "select * from mixed limit 0" "select * from mixed where id>? and description not like ?"))
 
-$(genSqlWith defGenOpts { _goSel = ''SelOne } "my5" myW (\f -> [st|select count(*) as cnt1,'xxx' as field2,123 as numfld from mixed #{f ""}|]))
+$(genSqlWith defGenOpts { goSel = ''SelOne } "my5" myW (\f -> [st|select count(*) as cnt1,'xxx' as field2,123 as numfld from mixed #{f ""}|]))
 
 $(genSql "my6" myW (\f -> [st|select *,'somejunk' as xyz from mixed #{f ""}|]))
 

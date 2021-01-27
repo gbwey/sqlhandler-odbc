@@ -68,7 +68,7 @@ SELECT case when EXISTS (
     JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace
     WHERE  1=1
     #{cl} -- AND n.nspname = 'public'
-    AND    c.relname = '#{_tName t}'
+    AND    c.relname = '#{tName t}'
     AND    c.relkind = 'r'    -- only tables(?)
 ) then '#{found}'
 else '#{notfound}' end
@@ -155,7 +155,7 @@ SELECT a.attrelid::regclass::text, a.attname
         ELSE format_type(a.atttypid, a.atttypmod)
         END AS data_type
 FROM   pg_attribute  a
-WHERE  a.attrelid = '#{_tName t}'::regclass
+WHERE  a.attrelid = '#{tName t}'::regclass
 AND    a.attnum > 0
 AND    NOT a.attisdropped
 ) W on W.attname=tab_columns.column_name
@@ -171,7 +171,7 @@ ON tab_constraints.constraint_name = col_constraints.constraint_name
 --LEFT OUTER JOIN
 --information_schema.check_constraints AS col_check_constraints
 --ON col_check_constraints.constraint_name = tab_constraints.constraint_name
-WHERE tab_columns.table_name = '#{_tName t}'
+WHERE tab_columns.table_name = '#{tName t}'
 and   tab_columns.table_schema #{pgSchemaTableSql db t}
 and (tab_constraints.table_name is null or tab_constraints.table_name = tab_columns.table_name)
 ORDER BY ordinal_position

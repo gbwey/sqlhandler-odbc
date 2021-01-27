@@ -46,7 +46,7 @@ type instance WriteableDB (DBMS Writeable) = 'True
 
 -- | c# connection string
 connCSharpText :: DBMS a -> String
-connCSharpText DBMS {..} = T.unpack [st|Server=#{_msserver};Database=#{_msdb};#{connAuthMSSQLCSharp _msauthn};Connection Timeout=0;MultipleActiveResultSets=true;|] -- Packet Size=32767
+connCSharpText DBMS {..} = T.unpack [st|Server=#{msserver};Database=#{msdb};#{connAuthMSSQLCSharp msauthn};Connection Timeout=0;MultipleActiveResultSets=true;|] -- Packet Size=32767
 
 instance GConn (DBMS a) where
   loadConnTH _ k = do
@@ -139,7 +139,7 @@ LEFT OUTER JOIN
 LEFT OUTER JOIN
     sys.indexes i ON ic.object_id = i.object_id AND ic.index_id = i.index_id
 WHERE
-  c.object_id = OBJECT_ID('#{cl}#{_tName t}')
+  c.object_id = OBJECT_ID('#{cl}#{tName t}')
 order by c.column_id
 |]
 
@@ -164,7 +164,7 @@ connAuthMSSQLCSharp Trusted = "Trusted_Connection=True"
 connAuthMSSQLCSharp (UserPwd uid (Secret pwd)) = T.unpack [st|User Id=#{uid};Password=#{pwd}|]
 
 mkTrusted :: HasCallStack => DBMS a -> DBMS a
-mkTrusted z@DBMS {..} = z { _msauthn = case _msauthn of
+mkTrusted z@DBMS {..} = z { msauthn = case msauthn of
                                           Trusted -> error "mkTrusted: already trusted!!!"
                                           UserPwd {} -> Trusted }
 
@@ -303,7 +303,7 @@ wrapNonTransaction :: Sql db '[] '[Upd] -> Sql db '[] '[Alle U0]
 wrapNonTransaction sql = mkSql "wrapNonTransaction" [st|
   commit transaction
   SET IMPLICIT_TRANSACTIONS OFF
-  #{_sSql sql}
+  #{sSql sql}
   SET IMPLICIT_TRANSACTIONS ON
   begin transaction
  |]

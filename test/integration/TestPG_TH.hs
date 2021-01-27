@@ -5,7 +5,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE NoStarIsType #-}
@@ -26,9 +25,9 @@ $(genTypeList "PG1" pgW (\f -> [st|select 14 as fixedval1,'xx' ; select * from m
 
 $(genSql "pgsql2" pgW (\f -> [st|select * from mixed #{f "limit 10"}; select 14|]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[] |] } "pgsql3" pgW (\f -> [st|select * from mixed #{f "limit 10"}; select 14|]))
+$(genSqlWith defGenOpts { goEnc = [t| '[] |] } "pgsql3" pgW (\f -> [st|select * from mixed #{f "limit 10"}; select 14|]))
 
-$(genSqlWith defGenOpts { _goDBParam = ''Writeable } "pgsql4" pgW (\f -> [st|select * from mixed #{f "limit 10"}; select 14|]))
+$(genSqlWith defGenOpts { goDBParam = ''Writeable } "pgsql4" pgW (\f -> [st|select * from mixed #{f "limit 10"}; select 14|]))
 
 $(genSql "pgsql5" pgW (\f -> [st|select * from mixed #{f "limit 10"}; select 14|]))
 
@@ -44,5 +43,5 @@ $(genTypeFirst "PG8" pgW (\f -> [st|select * from mixed where id in (?,?,?) #{f 
 $(genSqlLR "pgsql6" pgW (\_ll _rr lr -> [st|select * from mixed where 1=1 #{lr "limit 0" "limit 5"}|]))
 $(genSqlLR "pgsql7" pgW (\ll rr lr -> [st|select * from mixed where 1=#{ll "0"}#{rr "1"} #{lr "limit 0" "limit 5"}|]))
 
-$(genSqlWith defGenOpts { _goEnc = [t| '[Int] |], _goSel = ''SelOne } "pgsql8" pgW (\f -> [st|select cast (? as int) as fixedval1,'xx', count(*) from mixed #{f ""}|]))
+$(genSqlWith defGenOpts { goEnc = [t| '[Int] |], goSel = ''SelOne } "pgsql8" pgW (\f -> [st|select cast (? as int) as fixedval1,'xx', count(*) from mixed #{f ""}|]))
 

@@ -64,7 +64,7 @@ SELECT case when count(*) > 0 then '#{found}' else '#{notfound}' end
   FROM information_schema.tables
   WHERE 1=1
     #{sch}
-    AND table_name = '#{_tName t}'
+    AND table_name = '#{tName t}'
 |]
   dropTableIfExistsSql db table = mkSql "dropTableIfExistsSql MySql" [st|drop table if exists #{getEffectiveTable db table}|]
   dropViewIfExistsSql db table = mkSql "dropViewIfExistsSql MySql" [st|drop view if exists #{getEffectiveTable db table}|]
@@ -128,7 +128,7 @@ SELECT
     , case when extra is not null and extra like '%auto_increment%' then 1 else 0 end
     , case when column_key is not null and column_key = 'PRI' then 1 else 0 end -- need to get column number of key
 FROM information_schema.columns
-WHERE table_name = '#{_tName t}'
+WHERE table_name = '#{tName t}'
 and   table_schema #{mySchemaTableSql db t}
 ORDER BY ordinal_position
 |]

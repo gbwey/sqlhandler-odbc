@@ -47,13 +47,13 @@ instance GConn (DBOracle a) where
   getAllTablesSql DBOracle {..} = mkSql "getAllTablesSql Oracle" [st|
     select owner || '.' || TABLE_NAME
     from SYS.ALL_TABLES
-    where owner='#{_orschema}'
+    where owner='#{orschema}'
     order by TABLE_NAME
   |]
   getAllViewsSql DBOracle {..} = mkSql "getAllViewsSql Oracle" [st|
     select owner || '.' || VIEW_NAME
     from SYS.ALL_VIEWS
-    where owner='#{_orschema}'
+    where owner='#{orschema}'
     order by VIEW_NAME
   |]
   -- bearbeiten: schema handling
@@ -63,7 +63,7 @@ instance GConn (DBOracle a) where
 SELECT case when EXISTS (
     SELECT 1
     from SYS.ALL_TABLES
-    where table_name = '#{_tName t}'
+    where table_name = '#{tName t}'
     #{cl}
 ) then '#{found}'
 else '#{notfound}' end from dual
@@ -116,7 +116,7 @@ getOracleColumnMetaSql db t =
         and t.owner=cons.owner
         and cons.constraint_type='P'
   where t.owner='#{sch}'
-  and t.table_name='#{_tName t}'
+  and t.table_name='#{tName t}'
   order by t.table_name, t.column_id
  |]
 

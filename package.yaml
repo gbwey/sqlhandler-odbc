@@ -42,9 +42,12 @@ dependencies:
 - ghc-prim
 - hdbc-odbc2
 - lens
-- logging
+- logging-dhall
+- logging-simple
 - monad-logger
 - mtl
+- path
+- path-io
 - regex-applicative
 - shakespeare
 - sqlhandler

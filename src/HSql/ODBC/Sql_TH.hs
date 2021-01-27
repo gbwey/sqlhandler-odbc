@@ -27,7 +27,6 @@ import qualified Language.Haskell.TH.Syntax as TS
 import Control.Monad (forM)
 import Data.List (uncons)
 import Data.Char (isLower)
-import Control.Lens.TH (makeLenses)
 import Data.Vinyl (Rec(..), ElField)
 import qualified UnliftIO.Exception as UE (throwIO)
 import HSql.ODBC.DBConn
@@ -47,21 +46,19 @@ import GHC.Stack (HasCallStack)
 
 -- | options for customizing the generated Sql functions
 data GenOpts = GenOpts {
-    _goEnc :: !(Q Type)
-  , _goNameFunc :: !(Text -> Text) -- ^ pretransform the metadata column name before cleaning and unduping
-  , _goDBParam :: !TH.Name  -- ^ database parameter eg '''ReadOnly' '''Writeable (mkName "a")
-  , _goSel :: !TH.Name -- ^ '''Sel or '''SelOne
+    goEnc :: !(Q Type)
+  , goNameFunc :: !(Text -> Text) -- ^ pretransform the metadata column name before cleaning and unduping
+  , goDBParam :: !TH.Name  -- ^ database parameter eg '''ReadOnly' '''Writeable (mkName "a")
+  , goSel :: !TH.Name -- ^ '''Sel or '''SelOne
   }
-
-makeLenses ''GenOpts
 
 defGenOpts :: GenOpts
 defGenOpts = GenOpts [t| '[] |] T.toLower (mkName "a") ''Sel
 
 showGenOpts :: GenOpts -> Q Text
 showGenOpts GenOpts {..} = do
-  enc <- _goEnc
-  return [st| GenOpts: dbparam=#{show _goDBParam} sel=#{show _goSel} enc=#{show enc} |]
+  enc <- goEnc
+  return [st| GenOpts: dbparam=#{show goDBParam} sel=#{show goSel} enc=#{show enc} |]
 
 -- | 'genMSSimple' generates a Sql function for a 'Sel' query for mssql but without any input parameters
 -- ie Sql (DBMS a) '[] '[Sel ...]
@@ -70,7 +67,7 @@ genMSSimple fn db sql = genMSWith defGenOpts fn db (const sql)
 
 -- | 'genMS' same as 'genMSSimple' but additionally allows you to specify the DBMS parameter
 genMS :: String -> DBMS a -> TH.Name -> Text -> Q [TS.Dec]
-genMS fn db nm sql = genMSWith defGenOpts { _goDBParam = nm } fn db (const sql)
+genMS fn db nm sql = genMSWith defGenOpts { goDBParam = nm } fn db (const sql)
 
 -- | 'genMSWith' is the most general method for creating mssql functions
 -- uses the stored process describe first resultset to get the metadata for the sql query
@@ -78,10 +75,10 @@ genMSWith :: GenOpts -> String -> DBMS a -> FN1 -> Q [TS.Dec]
 genMSWith opts@GenOpts {..} fn db sql = do
   txt <- showGenOpts opts
   runIO $ putStrLn $ "\ngenMSWith " ++ fn ++ " " ++ T.unpack txt
-  smds <- runIO $ fs $ getMssqlMetaTH _goNameFunc db $ mkSql' @'[U0] (sql (const "null"))
+  smds <- runIO $ fs $ getMssqlMetaTH goNameFunc db $ mkSql' @'[U0] (sql (const "null"))
   let nm = mkName fn
-  encs <- _goEnc
-  return [SigD nm (iiMeta (simpleTypeTH _goDBParam) _goSel encs smds), ValD (VarP nm) (NormalB (AppE (AppE (AppE (AppE (ConE 'Sql) (LitE (StringL fn))) (VarE 'defEnc)) (VarE 'defDec)) (LitE (StringL (T.unpack (sql id)))))) []]
+  encs <- goEnc
+  return [SigD nm (iiMeta (simpleTypeTH goDBParam) goSel encs smds), ValD (VarP nm) (NormalB (AppE (AppE (AppE (AppE (ConE 'Sql) (LitE (StringL fn))) (VarE 'defEnc)) (VarE 'defDec)) (LitE (StringL (T.unpack (sql id)))))) []]
 
 -- | creates a ElField style Sql signature for mssql eg Sql (DBMS Writeable) '[Char,Int] '[SelOne (Rec ElField '[ "aaa" ::: Int, "bbb" ::: String, "ccc" ::: Bool ]]
 iiMeta :: TH.Type -> TH.Name -> Type -> [MSSqlTHMetaData] -> Type
@@ -191,17 +188,17 @@ genSqlLRWith opts@GenOpts {..} fn db sql = do
   let dbname = getDbDefault (Tagged db)
   txt <- showGenOpts opts
   runIO $ putStrLn $ "\ngenSqlLRWith " ++ fn ++ " " ++ T.unpack txt
-  enc <- _goEnc
-  let w = AppT (AppT (ConT ''Sql) (AppT (ConT dbname) (simpleTypeTH _goDBParam))) enc
+  enc <- goEnc
+  let w = AppT (AppT (ConT ''Sql) (AppT (ConT dbname) (simpleTypeTH goDBParam))) enc
   let binders = getlen enc
   let (ll, rr) = getSqlLR sql
   ms <- runIO $ fs $ runRawCol db (replicate binders SqlNull) ll
   xxs <- forM ms $ \m ->
-          case getSqlMetasHdbc _goNameFunc m of
+          case getSqlMetasHdbc goNameFunc m of
             Left e -> UE.throwIO e
             Right smds -> return smds
   let nm = mkName fn
-  let z = foldr (AppT . AppT PromotedConsT . createSignatureFromMeta _goSel) PromotedNilT xxs
+  let z = foldr (AppT . AppT PromotedConsT . createSignatureFromMeta goSel) PromotedNilT xxs
   -- this works but dont gain a lot : cant splice in the name of a function in the type declaration
   -- we can splice the name for the value itself
   -- aa :: ... [aa cannot be spliced!] but aa = [here the aa can be spliced

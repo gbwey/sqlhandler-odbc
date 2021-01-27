@@ -70,15 +70,14 @@ data Writeable
 data ReadOnly
 
 data Schema = ConnSchema | Schema !(Maybe Text) deriving (Show,Eq,Ord,G.Generic)
-$(makePrisms ''Schema)
 
 instance NFData Schema
 
 data Table a = Table {
-                 _tDb :: !(Maybe Text)
-               , _tSchema :: !Schema
-               , _tName :: !Text
-               , _tTable :: !Bool
+                 tDb :: !(Maybe Text)
+               , tSchema :: !Schema
+               , tName :: !Text
+               , tTable :: !Bool
                } deriving (Show, Eq, Ord, Functor, G.Generic)
 
 instance NFData a => NFData (Table a)
@@ -88,8 +87,6 @@ instance GS.HasDatatypeInfo (Table a)
 
 instance FromField Schema where
   fromField = pure . show
-
-makeLenses ''Table
 
 instance GConn a => FromField (Table a) where
   fromField = pure . T.unpack . showTable
@@ -117,14 +114,14 @@ instance GConn a => ToText (Table a) where
 showTableImpl :: Maybe (Char,Char) -> Table a -> Text
 showTableImpl mq Table {..} =
   let (q1,q2) = maybe (mempty,mempty) (T.singleton *** T.singleton) mq
-      q0 = case (_tDb,_tSchema) of
+      q0 = case (tDb, tSchema) of
              (Nothing, Schema Nothing) -> ""
              (Nothing, ConnSchema) -> ""
              (Just a, Schema Nothing)  -> a <> ".."
              (Just a, ConnSchema)  -> a <> ".."
              (Nothing, Schema (Just b))  -> b <> "."
              (Just a, Schema (Just b))   -> a <> "." <> b <> "."
-  in q0 <> q1 <> _tName <> q2
+  in q0 <> q1 <> tName <> q2
 
 type GConnWrite db = (WriteableDB db ~ 'True, GConn db)
 
@@ -213,10 +210,10 @@ instance DefDec (Dec ColumnMeta) where
   defDec = defD9 ColumnMeta
 
 unsafeCastTable :: GConn b => b -> Table a -> Table b
-unsafeCastTable db Table {..} = Table Nothing (Schema (getSchema db)) _tName True
+unsafeCastTable db Table {..} = Table Nothing (Schema (getSchema db)) tName True
 
 unsafeCastTableWithDB :: GConn b => b -> Table a -> Table b
-unsafeCastTableWithDB db Table {..} = Table (getDb db) (Schema (getSchema db)) _tName True
+unsafeCastTableWithDB db Table {..} = Table (getDb db) (Schema (getSchema db)) tName True
 
 showTable :: GConn a => Table a -> Text
 showTable t = showTableImpl (getDelims t) t
@@ -226,14 +223,14 @@ instance NFData LogId
 
 showTableForBCP :: Table a -> LogId -> String
 showTableForBCP Table {..} lid =
-  let q0 = case (_tDb,_tSchema) of
+  let q0 = case (tDb, tSchema) of
              (Nothing, Schema Nothing) -> ""
              (Nothing, ConnSchema) -> ""
              (Just a, Schema Nothing)  -> a <> "__"
              (Just a, ConnSchema)  -> a <> "__"
              (Nothing, Schema (Just b))  -> b <> "_"
              (Just a, Schema (Just b))   -> a <> "_" <> b <> "_"
-  in T.unpack [st|#{q0}#{_tName}.#{lid}|]
+  in T.unpack [st|#{q0}#{tName}.#{lid}|]
 
 escapeField :: GConn a => p a -> Text -> Text
 escapeField p fld =
@@ -248,14 +245,14 @@ found = "Found"
 
 getEffectiveSchema :: GConn a => a -> Table a -> Maybe Text
 getEffectiveSchema db t =
-  case _tSchema t of
+  case tSchema t of
     ConnSchema -> getSchema db
     Schema a -> a
 
 getEffectiveTable :: GConn a => a -> Table a -> Table a
 getEffectiveTable db t =
-  case _tSchema t of
-    ConnSchema -> t { _tSchema = Schema (getSchema db) }
+  case tSchema t of
+    ConnSchema -> t { tSchema = Schema (getSchema db) }
     Schema _ -> t
 
 instance GConn a => DefDec (Dec (Table a)) where
@@ -294,7 +291,7 @@ getField1 = \case
    POther {} -> []
 
 parseCreateTableSql :: GConn db => Sql db a b -> Either Text (Table db, [PType])
-parseCreateTableSql (T.unpack . _sSql -> s) =
+parseCreateTableSql (T.unpack . sSql -> s) =
   fmap (\(Q.PTable t xs) -> (toTableName t, xs)) (Q.parseCreateTableSqlImpl s)
 
 -- uses Upd with a predicate for the number of rows that need to be inserted
@@ -303,7 +300,7 @@ insertTableSqlAuto s =
   parseCreateTableSql s <&>
    \(tab,flds) r ->
       let (x,i) = insertTableSqlPrivate (r, sum (map cntField flds)) tab
-      in (Sql (_sDescription s) (_sEncoders s) (E1 UpdP) x, i)
+      in (Sql (sDescription s) (sEncoders s) (E1 UpdP) x, i)
 
 insertTableSqlPrivate :: GConn db => (Int,Int) -> Table db -> (Text, Int)
 insertTableSqlPrivate (r,c) tab =

@@ -60,8 +60,8 @@ getMssqlMeta mssqldb sql = do
   --when (or (fmap (H.SqlNull `elem`) ys)) $ UE.throwIO $ MissingColumnName $ T.pack $ show ys
   forM (zip [1::Int ..] ys) $ \(i, z) ->
     case (rvalf #name &&& rvalf #fulltype &&& rvalf #nullable) z of
-      (_,(Nothing,_)) -> UE.throwIO $ MissingSqlMetaData [st|getMssqlMeta: missing type for column #{i} sql[#{_sSql sql}] z=#{show z}|]
-      (Nothing,(Just _,_)) -> UE.throwIO $ MissingSqlMetaData [st|getMssqlMeta: missing name for column #{i} sql[#{_sSql sql}] z=#{show z}|]
+      (_,(Nothing,_)) -> UE.throwIO $ MissingSqlMetaData [st|getMssqlMeta: missing type for column #{i} sql[#{sSql sql}] z=#{show z}|]
+      (Nothing,(Just _,_)) -> UE.throwIO $ MissingSqlMetaData [st|getMssqlMeta: missing name for column #{i} sql[#{sSql sql}] z=#{show z}|]
       (Just a,(Just b,c)) -> return $ MSSqlMetaData a b c
 
 -- | 'getMssqlMetaTH' generates metadata for Rec ElField
@@ -86,7 +86,7 @@ getSqlTHMetaData fn i t = do
 getMssqlMetaImpl :: ML e m => DBMS db -> Sql (DBMS db) '[] '[r] -> m [GetGenericSchemaMSSQL db]
 getMssqlMetaImpl mssqldb sql = do
   ys <- ext <$> runSql mssqldb RNil (getMssqlSchemaSqlGeneric sql)
-  when (null ys) $ UE.throwIO $ InvalidSql $ _sSql sql
+  when (null ys) $ UE.throwIO $ InvalidSql $ sSql sql
   return ys
 
 -- | clean up the name of the column so we can use it as a valid label in an ElField
@@ -144,7 +144,7 @@ type GetGenericSchemaMSSQL db = F '["name" ::: Maybe Text, "fulltype" ::: Maybe 
 -- | 'getMssqlSchemaSqlGeneric' runs dm_exec_describe_first_result_set to parse out the metadata
 getMssqlSchemaSqlGeneric :: Sql (DBMS a) '[] '[r] -> Sql (DBMS a) '[] '[Sel (GetGenericSchemaMSSQL a)]
 getMssqlSchemaSqlGeneric sql' =
- let sql = T.replace "'" "''" $ flattenSql $ _sSql sql'
+ let sql = T.replace "'" "''" $ flattenSql $ sSql sql'
  in mkSql "getMssqlSchemaSqlGeneric" [st|
 SET NOCOUNT ON
 DECLARE @sql NVARCHAR(MAX)

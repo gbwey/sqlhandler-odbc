@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE NoStarIsType #-}
 {- |
 Module      : HSql.ODBC.SqlParser
@@ -27,14 +28,14 @@ import Text.Shakespeare.Text (st)
 import qualified Data.Text as T
 import Data.Text (Text)
 import Control.Monad.IO.Class (liftIO)
-import System.IO (FilePath)
-import System.Directory (getDirectoryContents)
 import Data.List (dropWhileEnd,sort)
 import Data.Char (isSpace,isAlpha,isAlphaNum,isDigit,toLower)
 import Data.Maybe (mapMaybe,fromMaybe)
 import Text.Regex.Applicative
 import Data.Foldable (asum)
 import Data.Function (on)
+import Path
+import qualified Path.IO as PIO
 
 space :: RE Char Char
 space = psym isSpace
@@ -108,12 +109,13 @@ parseCreateTableSqlImpl sql =
         Nothing -> Left [st|cannot parse this as a CREATE TABLE sql[#{sql}]|]
         Just (tab, ys) -> PTable (dropWhileEnd isSpace tab) . concat <$> mapM (matchSqlField Nothing) (lines ys)
 
-matchBcp :: String -> String -> Maybe (Int,String)
-matchBcp table = match (withMatched (stringCI table *> (read <$> some (psym isDigit)) <* stringCI ".bcp"))
+matchBcp :: String -> Path Rel File -> Maybe (Int, Path Rel File)
+matchBcp table fn =
+  fmap (,fn) $ match (stringCI table *> (read <$> some (psym isDigit)) <* stringCI ".bcp") (Path.fromRelFile fn)
 
-matchBcps :: String -> IO [(Int, FilePath)]
+matchBcps :: String -> IO [(Int, Path Rel File)]
 matchBcps base = do
-  xs' <- liftIO $ getDirectoryContents "."
+  (_,xs') <- liftIO $ PIO.listDirRel [Path.reldir|.|]
   return $ sort $ mapMaybe (matchBcp base) xs'
 
 stripQuotes :: Maybe (Char,Char) -> Text -> Text

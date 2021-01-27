@@ -59,7 +59,7 @@ insertFrameSql tab _ =
   let cnames = F.columnHeaders (Proxy @(F rs))
       len = length cnames
       flds = T.intercalate "," $ map (escapeField tab . T.pack) cnames
-      tt = escapeField tab (_tName tab)
+      tt = escapeField tab (tName tab)
   in mkSql [st|insertFrameSql #{tab}|] [st|insert into #{tt} (#{flds}) values#{qqsn len}|]
 
 -- | 'insertFrameLoad' loads a table with the frame using the names and types from the frame
