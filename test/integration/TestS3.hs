@@ -39,13 +39,6 @@ import qualified UnliftIO as UE
 main :: IO ()
 main = Spec.spec
 
-anotherTest :: IO ()
-anotherTest = do
-  x <- fs $ unAppM $ runSqlX s3W RNil s3_test1
-  print $ ext x
-  when True $ UE.throwIO $ GBException [st|anotherTest: ...|]
-
-
 -- as soon as we use liftIO we need monadio
 -- as soon as we use logDebug we need monadlogger!
 -- if we only use HSql stuff then we are ok

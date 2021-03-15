@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ce7ffce434c8f2b3154f6b4460130a107e0e3b4bdcae63f5f885ce4e776e4f5a
+-- hash: ebe2bba3a687ce2ef1a996961dc11413cba2fe6d97f56e0dd2b1844e040d139c
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -80,20 +80,16 @@ library
   ghc-options: -Wall -Wcompat -Wno-star-is-type -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wunused-type-patterns -Wredundant-constraints
   build-depends:
       Frames >=0.6.1
-    , async
     , base >=4.7 && <=5.1
     , bytestring
     , containers
     , database
     , deepseq
     , dhall >=1.32.0
-    , directory
     , formatting
     , generics-sop
-    , ghc-prim
     , hdbc-odbc2
     , lens
-    , logging-dhall
     , logging-simple
     , monad-logger
     , mtl
@@ -107,7 +103,6 @@ library
     , text
     , these >=1.0.0
     , time
-    , transformers
     , typelevel
     , unliftio
     , unliftio-core
@@ -133,21 +128,17 @@ test-suite spec
   build-depends:
       Frames >=0.6.1
     , QuickCheck
-    , async
     , base
     , bytestring
     , containers
     , database
     , deepseq
     , dhall >=1.32.0
-    , directory
     , formatting
     , generics-sop
-    , ghc-prim
     , hdbc-odbc2
     , hspec
     , lens
-    , logging-dhall
     , logging-simple
     , monad-logger
     , mtl
@@ -166,7 +157,6 @@ test-suite spec
     , text
     , these >=1.0.0
     , time
-    , transformers
     , typelevel
     , unliftio
     , unliftio-core

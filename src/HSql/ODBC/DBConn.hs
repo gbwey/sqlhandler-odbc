@@ -1,4 +1,3 @@
--- fd $ unAppM $ AppM $ runSql s3W RNil s3_test0
 {-# OPTIONS -Wno-redundant-constraints #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -82,11 +81,14 @@ import Control.Monad.IO.Unlift (MonadUnliftIO(..))
 import Control.Monad.Reader
 import Debug.Trace
 
+-- | wrapper for a hdbc connection
 newtype HConn a = HConn H.Connection deriving H.IConnection
 
 -- | 'SqlPairRW' contains name of a table and the sql needed to create that table
 type SqlPairRW db dbw a b = GConnWrite dbw => (Table dbw, Maybe (Sql db a b))
 
+
+-- | creates a pair containing the table and sql
 mkSqlPair :: GConnWrite dbw
   => Table dbw
   -> Sql db a b
@@ -96,10 +98,12 @@ mkSqlPair table sql = (table, Just sql)
 -- | 'TVTable' distinguishes between tables and views
 data TVTable = TVTable | TVView deriving (Show,Eq)
 
+-- | predicate on 'TVTable'
 isTable :: TVTable -> Bool
 isTable TVTable = True
 isTable TVView = False
 
+-- | create table options
 data CreateTable = DropCreateTable | CreateTable | SkipCreate deriving (Show,Eq)
 
 instance ToText CreateTable where
@@ -256,7 +260,7 @@ runSqlMetaImpl domany desc conn ps sql = do
   UE.bracket (liftIO $ H.prepare conn sql) (liftIO . H.finish) $ \stmt -> do
     rc <- liftIO $ H.execute stmt ps
     let go _ Nothing = return []
-        go !(i::Int) (Just (Right meta)) = do
+        go !i (Just (Right meta)) = do
                         $logDebug [st|runSqlMetaImpl: Result set! i=#{i}|]
                         if domany then do
                           zz <- liftIO $ H.nextResultSet stmt
@@ -265,7 +269,7 @@ runSqlMetaImpl domany desc conn ps sql = do
                         else return [meta]
         go !i (Just (Left n)) =
                         UE.throwIO $ GBException [st|runSqlMetaImpl: Update not allowed! rc==#{show n} i=#{i}|]
-    go 0 (Just rc)
+    go (0::Int) (Just rc)
 
 -- dont need to unwrap HConn cos made it an instance of H.IConnection so it is isomorphic
 -- | 'withDB' opens a database connection and allows the caller to run commands using the connection and closes the connection at the end
@@ -297,7 +301,7 @@ bracketDB db fn =
 allTablesCount' :: forall a m e . (GConn a, ML e m) => a -> m [(Table a, Int, Maybe UTCTime, Maybe UTCTime)]
 allTablesCount' = allTablesCount (const True)
 
--- | 'allTablesCount' returns a list of table plus number of rows using a predicate
+-- | 'allTablesCount' returns a list of table plus number of rows filtered by a predicate
 allTablesCount :: (GConn a, ML e m)
   => (Table a -> Bool)
   -> a
@@ -313,18 +317,21 @@ allTablesCount p db =
         n <- getOneTableRowCount db t -- removed catch exception:do we still need it?
         return (t,n,Nothing,Nothing)
 
+-- | return views filtered by a predicate
 allViews :: (GConn a, ML e m)
   => (Table a -> Bool)
   -> a
   -> m [Table a]
 allViews = allTablesAndViews TVView
 
+-- | return tables filtered by a predicate
 allTables :: (GConn a, ML e m)
   => (Table a -> Bool)
   -> a
   -> m [Table a]
 allTables = allTablesAndViews TVTable
 
+-- | return tables and views filtered by a predicate
 allTablesAndViews :: forall a m e . (GConn a, ML e m)
   => TVTable
   -> (Table a -> Bool)
@@ -334,12 +341,12 @@ allTablesAndViews tv p db = do
   vs <- Sql.ext <$> runSql db RNil ((if isTable tv then getAllTablesSql else getAllViewsSql) db)
   return $ filter p $ map (\t -> t { tTable = isTable tv }) vs
 
--- can use with wprint
+-- | return all tables for use with wprint
 getAllTablesSqlImpl :: forall db m e . (ML e m, GConn db)
   => db -> m (Rec Sql.RState '[Sql.Sel (Table db)])
 getAllTablesSqlImpl db = runSql db RNil $ getAllTablesSql db
 
--- can use with wprint
+-- | return all views for use with wprint
 getAllViewsSqlImpl :: forall db m e . (ML e m, GConn db)
   => db -> m (Rec Sql.RState '[Sql.Sel (Table db)])
 getAllViewsSqlImpl db = runSql db RNil $ getAllViewsSql db
@@ -353,6 +360,7 @@ dropTable :: (ML e m, GConnWrite db)
 dropTable db table =
   void $ runSqlUnsafe db RNil $ dropTableIfExistsSql db table
 
+-- | checks for existence of a table
 existsTable :: (GConn a, ML e m)
   => a
   -> Table a
@@ -423,6 +431,7 @@ compareDatabaseImpl p1 p2 x1 x2 =
            in either (cmp p1) (cmp p2)
   in divvyKeyed xt (fn x1) (fn x2)
 
+-- | compares tables with rowcounts from different databases and groups them in a user friendly format
 compareIt :: (GConn a, GConn b) => [These (Table a, Int) (Table b, Int)] -> [TL.Text]
 compareIt tps =
   let (ll, rr, bb) = partitionThese tps
@@ -444,6 +453,7 @@ compareIt tps =
             <> map (\((a,i),(_,j)) -> [lt|#{padn a} #{padi i} #{padi j}     #{pct i j}|]) gterrs
             <> pure [lt|Left=#{length ll} Right=#{length rr} Ok=#{length oks} Errs=#{length errs} LTErrs=#{length lterrs} GTErrs=#{length gterrs}|]
 
+-- | shows user-friendly percent difference for row counts
 pct :: Int -> Int -> String
 pct a b =
   if a == 0 || b == 0 then "empty!"
@@ -459,6 +469,7 @@ pct a b =
 logDatabaseAll :: (GConn a, ML e m) => a -> m ()
 logDatabaseAll = logDatabase "" (const True)
 
+-- | 'logDatabaseAll' logs table name and row counts filtered by a predicate
 logDatabase :: (GConn a, ML e m)
   => Text
   -> (Table a -> Bool)
@@ -488,6 +499,7 @@ logDatabaseImpl txt anydb (fmap (\(a,b,_,_) -> (a,b)) -> tps) =
          <> zipWith ff [1 :: Int ..] (sortOn (\(x,y) -> (Down y, T.toLower (tName x))) tps)
          <> pure [lt|end logDatabase [#{txt}] #{showDb anydb} #{length tps} tables|]
 
+-- | display differences between two sets of tables
 prtDiff :: (GConn a, GConn b) => (TP, These (Table a) (Table b)) -> ((Int,These (Table a) (Table b)),TL.Text)
 prtDiff (tp,tab) =
   let (x0,x3,len) = (14,10,55)
@@ -506,6 +518,7 @@ prtDiff (tp,tab) =
   in ((constrIndex (toConstr tp),tab),txt)
 -- in order of badness  -- have to make Less and More more negative for sorting cos the worst is higher values
 -- tuple with tablename to get (TP,Text) and then sort on this
+-- | represents differences between two tables
 data TP = LeftOnly !Int
         | REmpty !Int
         | RightOnly !Int
@@ -515,6 +528,7 @@ data TP = LeftOnly !Int
         | Same !Int -- defaults to by tablename cos mostly zero
         deriving (Show,Eq,Ord,Data)
 
+-- | take the diff of two databases and log
 logDiffDatabase :: (ML e m, GConn a, GConn b)
   => a
   -> b
@@ -523,6 +537,7 @@ logDiffDatabase db1 db2 = do
   txt <- diffDatabase db1 db2
   mapM_ ($logInfo . TL.toStrict) txt
 
+-- | take the diff of two databases
 diffDatabase :: (ML e m, GConn a, GConn b)
   => a
   -> b
@@ -570,10 +585,13 @@ handleBoth (n1,n2) =
                GT -> More (n1,n2,avg)
                EQ -> Same n1
 
+-- use X.replace (" " <$ some (X.psym isSpace))
+-- | remove newlines and extra spaces
 flattenSql :: Text -> Text
 flattenSql zs = cv $ T.replace "\r" " " $ T.replace "\n" " " $ T.strip zs
   where cv xs = let r = T.replace "  " " " xs in if r==xs then r else cv r
 
+-- | convert from sqlvalue to bcp compatible string
 toBcpFromSql :: HasCallStack => SqlValue -> ByteString
 toBcpFromSql = \case
     SqlByteString bs -> bs
@@ -590,6 +608,7 @@ toBcpFromSql = \case
     SqlZonedTime dt -> stringToByteString (formatTime defaultTimeLocale "%F %T" dt)
     o -> error $ T.unpack [st|copyDBSqltoBCPFile: dont know how to handle [#{show o}]|]
 
+-- | create a copy of table: works across rdbms
 createDBTableFrom :: (ML e m, GConn src, GConnWrite tgt)
   => src
   -> Table src
@@ -618,6 +637,8 @@ createDBTableFromSql zs tabout =
                   #{T.intercalate "\n  , " (map mid zs)}
                 )
              |]
+
+-- | create select statement based on meta data
 getDBSelectSql :: GConn src
   => [ColumnMeta]
   -> Table src
@@ -625,6 +646,7 @@ getDBSelectSql :: GConn src
 getDBSelectSql meta srctable =
   [st|select #{T.intercalate "," (map (escapeField srctable . cName) meta)} from #{srctable}|]
 
+-- | create insert statement based on meta data
 getDBInsertSql :: GConnWrite tgt
   => [ColumnMeta]
   -> Table tgt
@@ -633,6 +655,7 @@ getDBInsertSql meta tgttable =
   let xs = map (escapeField tgttable . cName) meta
   in [st|insert into #{tgttable} #{Sql.vvs xs} values#{Sql.qqs meta}|]
 
+-- | get the number of rows for a table
 getOneTableRowCount :: (GConn db, ML e m)
   => db
   -> Table db
@@ -640,6 +663,7 @@ getOneTableRowCount :: (GConn db, ML e m)
 getOneTableRowCount anydb table =
   Sql.ext <$> runSql anydb RNil (Sql.mkSql [st|getOneTableRowCount #{table}|] [st|select count(*) from #{table}|] :: Sql db '[] '[Sql.SelOne Int])
 
+-- | get meta data from a table
 getColumnInfo :: (ML e m, GConn db)
   => db
   -> Table db
@@ -650,6 +674,7 @@ getColumnInfo db t = do
   when (null cs) $ UE.throwIO $ GBException [st|getColumnInfo: missing metadata for #{t} in #{showDb db}|]
   return $ map (f &&& id) cs
 
+-- | compare all fields from two tables
 compareFields :: (ML e m, GConn db1, GConn db2)
   => db1
   -> Table db1
@@ -803,208 +828,3 @@ systypes =
 
 stringToByteString :: String -> ByteString
 stringToByteString = TE.encodeUtf8 . T.pack
-
-newtype AppM e m a = AppM { unAppM :: ReaderT e (LoggingT m) a }
-  deriving newtype (Monad, Applicative, Functor, MonadLoggerIO, MonadIO, MonadLogger, MonadReader e)
-  deriving MonadTrans via (AppM e)
---  deriving newtype (MonadUnliftIO (AppM e m))
-
-instance MonadUnliftIO m => MonadUnliftIO (AppM e m) where
---  askUnliftIO = AppM (fmap (\(UnliftIO run) -> UnliftIO (run . unAppM)) askUnliftIO)
-  withRunInIO go = AppM (withRunInIO (\k -> go (k . unAppM)))
-
--- >fd $ unAppM $ runSqlX s3W RNil s3_test0
-
-class HSql m where
-  runSqlX :: (TSql b a
-           , GConn db
-           , RunSqlOk b db
-           )
-          => db
-          -> Rec V.Identity a
-          -> Sql db a b
-          -> m (Rec Sql.RState b)
-
-  runSqlIX :: TSql b a
-          => HConn db
-          -> Rec V.Identity a
-          -> Sql db a b
-          -> m (Rec Sql.RState b)
-
-  logSqlHandlerExceptionsX :: Sql.SE -> m ()
-
-  -- | 'runSqlRawI' runs an untyped query with metadata using an existing connection using 'withDB'
-  runSqlRawIX :: HConn db
-    -> [SqlValue]
-    -> Text
-    -> m [Sql.ResultSet]
-
-  -- | 'runSqlUnsafeX' runs a typed query but doesnt check RunSqlOk
-  runSqlUnsafeX :: (TSql b a
-                 , GConn db
-                 )
-     => db
-     -> Rec V.Identity a
-     -> Sql db a b
-     -> m (Rec Sql.RState b)
-
-  -- | 'runSqlX_' is the same as 'runSql' but throws away the output
-  runSqlX_ :: (TSql b a
-         , GConn db
-         , RunSqlOk b db
-         )
-        => db
-        -> Rec V.Identity a
-        -> Sql db a b
-        -> m ()
-
-
-  -- | 'runSqlRaw' runs an untyped query with metadata
-  runSqlRawX :: GConn db
-    => db
-    -> [SqlValue]
-    -> Text
-    -> m [Sql.ResultSet]
-
-  -- | 'runRawCol' just returns the metadata for the first resultset and ignores the rest used by TH
-  runRawColX :: GConn db
-    => db
-    -> [SqlValue]
-    -> Text
-    -> m [Sql.RMeta]
-
-  -- order is important for using @ b then a
-  -- | 'runSqlReadOnly' runs a typed query but explicitly requires the sql to be a non-update
-  runSqlReadOnlyX :: (TSql b a
-                   , Sql.WriteableRS b ~ 'False
-                   , GConn db
-                   )
-                  => db
-                  -> Rec V.Identity a
-                  -> Sql db a b
-                  -> m (Rec Sql.RState b)
-
-  allTablesCountX' :: GConn a
-     => a
-     -> m [(Table a, Int, Maybe UTCTime, Maybe UTCTime)]
-
-  -- | 'allTablesCount' returns a list of table plus number of rows using a predicate
-  allTablesCountX :: GConn a
-    => (Table a -> Bool)
-    -> a
-    -> m [(Table a, Int, Maybe UTCTime, Maybe UTCTime)]
-
-  allViewsX :: GConn a
-    => (Table a -> Bool)
-    -> a
-    -> m [Table a]
-
-  allTablesX :: GConn a
-    => (Table a -> Bool)
-    -> a
-    -> m [Table a]
-
-  -- doesnt work for oracle ie will try to drop or will fail!
-  -- | 'dropTable' is a convenience method for dropping a table
-  dropTableX :: GConnWrite db => db -> Table db -> m ()
-
-  existsTableX :: GConn a => a -> Table a -> m Bool
-
-  getColumnInfoX :: GConn db => db -> Table db -> m [(ColDataType, ColumnMeta)]
-
-  getOneTableRowCountX :: GConn db => db -> Table db -> m Int
-
-  timeCommandX :: Text -> m a -> m a
-
-  traceEventIOX :: String -> m ()
-
-  throwX :: Text -> m a
-
-  logDX, logIX, logWX, logEX :: Text -> m ()
-
-instance MonadUnliftIO m => HSql (AppM e m) where
-  runSqlX = runSqlUnsafeX
-
-  runSqlUnsafeX db vals sql = withDB db $ \conn -> runSqlIX conn vals sql
-
-  runSqlIX conn vals (Sql desc enc dec sql) = do
-    let hs = Sql.encodeVals enc vals
-    $logDebug [st|runSqlI: #{desc} encoded vals=#{show hs}|]
-    rrs <- runSqlRawIX conn hs sql
-    case Sql.processRetCol dec rrs of
-      Left es -> do
-                  logSqlHandlerExceptionsX es
-                  UE.throwIO $ GBException [st|runSqlI #{desc} #{Sql.showSE es} vals=#{show vals} sql=#{sql}|]
-      Right zzz -> return zzz
-
-  logSqlHandlerExceptionsX es = do
-    let len = length es
-    forM_ (N.zip (N.iterate (+1) (1 :: Int)) es) $ \(i,e) -> $logError [st|#{i} of #{len}: #{Sql.seShortMessage e}|]
-
-  runSqlRawIX conn hs sql = do
-    $logDebug [st|runSqlRawI: encoded hs=#{show hs}|]
-    runSqlImpl "runSqlRawI" conn hs (T.unpack sql)
-
-  runSqlX_ a b c = void $ runSqlUnsafeX a b c
-
-  runSqlRawX db hs sql = withDB db $ \conn -> runSqlRawIX conn hs sql
-
-  runRawColX db hs sql = withDB db $ \conn -> do
-    $logDebug [st|runRawCol:encoded hs=#{show hs}|]
-    runSqlMetaImpl True "runRawCol" conn hs (T.unpack sql)
-
-  runSqlReadOnlyX = runSqlUnsafeX
-
-  allTablesCountX' = allTablesCountX (const True)
-
-  allTablesCountX p db =
-    case getAllTablesCountSql (Just db) of
-      Just s -> do
-        xs <- Sql.ext <$> runSqlX db RNil s
-        return $ map (\z -> (rvalf #name z, rvalf #size z, rvalf #created z, rvalf #updated z)) xs
-      Nothing -> do
-        ts <- allTablesX p db
-        forM ts $ \t -> do
-          lrn <- UE.try $ getOneTableRowCountX db t
-          case lrn of
-            Left (e :: UE.SomeException) -> do
-                    $logWarn [st|allTablesAndViewsCount: ignoring exception #{show e}|]
-                    return (t,-1,Nothing,Nothing)
-            Right n -> return (t,n,Nothing,Nothing)
-
-  allViewsX = allTablesAndViews TVView
-
-  allTablesX = allTablesAndViews TVTable
-
-  dropTableX db table =
-    void $ runSqlUnsafeX db RNil $ dropTableIfExistsSql db table
-
-  existsTableX db table = do
-    ts <- Sql.ext <$> runSqlX db RNil (existsTableSql db table)
-    if ts == found then do
-       $logDebug [st|found #{table} db=#{showDb db}|]
-       return True
-    else if ts == notfound then do
-       $logWarn [st|could not find #{table} db=#{showDb db}|]
-       return False
-    else UE.throwIO $ GBException [st|unexpected value found[#{ts}] table[#{table}]|]
-
-  getOneTableRowCountX anydb table =
-    Sql.ext <$> runSqlX anydb RNil (Sql.mkSql [st|getOneTableRowCount #{table}|] [st|select count(*) from #{table}|] :: Sql db '[] '[Sql.SelOne Int])
-
-  getColumnInfoX db t = do
-    let (f, sql) = getColumnMetaSql db t
-    cs <- Sql.ext <$> runSqlX db RNil sql
-    when (null cs) $ UE.throwIO $ GBException [st|getColumnInfo: missing metadata for #{t} in #{showDb db}|]
-    return $ map (f &&& id) cs
-
-  timeCommandX s ma = timeCommand s ma
-
-  throwX = UE.throwIO . GBException
-
-  traceEventIOX = liftIO . traceEventIO
-
-  logDX = $logDebug
-  logIX = $logInfo
-  logWX = $logWarn
-  logEX = $logError

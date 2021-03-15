@@ -182,6 +182,7 @@ ORDER BY ordinal_position
 -- change out 'public' to the schema you want
 -- this takes 20 seconds to run but the next time is really fast
 
+-- | get all tables and associated row counts
 getPGTableCountsSql :: Sql (DBPG a) '[] '[Sel (GetAllTablesCount (DBPG a))]
 getPGTableCountsSql = mkSql "getPGTableCountsSql" [st|
 select table_schema || '.' || table_name as table

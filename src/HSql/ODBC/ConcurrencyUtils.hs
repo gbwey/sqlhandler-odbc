@@ -16,6 +16,9 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE NoStarIsType #-}
 {-# LANGUAGE PatternSynonyms #-}
+{- | provides helper methods for streaming database queries
+-}
+
 module HSql.ODBC.ConcurrencyUtils where
 import Control.Monad.Logger
 import Control.Monad.IO.Class (liftIO,MonadIO)
@@ -33,19 +36,22 @@ import Logging (pattern GBException, getNumThreads, threadNormal, ThreadPool (..
 import GHC.Stack (HasCallStack)
 import GHC.Generics as G (Generic)
 
+-- | specification for alllocating work over a given number of threads
 data StreamConcurrency = StreamConcurrency
-    { sThPool :: !ThreadPool
-    , sNumBatches :: !(Maybe Int) -- divide work into x units: dont need to set this as will default to number of threads above: if you have 5 threads and 30 batches then will divvy up the work to keep filling up the threads
-    , sPcntOrTxnCnt :: !Int -- width of insert OR number of rows/blocks per txn commit
-    , sOneInsert :: !Int -- how many rows in one individual insert statement -- defaults to 1
+    { sThPool :: !ThreadPool -- ^ number of threads
+    , sNumBatches :: !(Maybe Int) -- ^ divide work into x units: dont need to set this as will default to number of threads above: if you have 5 threads and 30 batches then will divvy up the work to keep filling up the threads
+    , sPcntOrTxnCnt :: !Int -- ^ width of insert OR number of rows/blocks per txn commit
+    , sOneInsert :: !Int -- ^ number of rows in a single insert statement -- defaults to 1
     } deriving (Show, Eq, G.Generic)
 
 instance ToText StreamConcurrency where
   toText = fromText . T.pack . show
 
+-- | default settings for 'StreamConcurency'
 defSC :: Int -> StreamConcurrency
 defSC n = StreamConcurrency threadNormal Nothing n 1
 
+-- | calculate the effective number of threads for streaming
 getWorkChunks :: MonadIO m => (Maybe Int, ThreadPool) -> m Int
 getWorkChunks (numb, thp) =
   case numb of
@@ -54,6 +60,7 @@ getWorkChunks (numb, thp) =
       (_,ov) <- liftIO $ getNumThreads (thOverride thp)
       return ov
 
+-- | pads out the input parameters to fir the sql query input requirements
 paditC :: (MonadLogger m,MonadIO m) => Int -> [SqlValue] -> m [SqlValue]
 paditC pcnt (length &&& id -> (len, x)) =
    case compare pcnt len of
@@ -63,6 +70,7 @@ paditC pcnt (length &&& id -> (len, x)) =
              $logWarn [st|padit: had to pad field: expected pcnt=#{pcnt} found #{len} x=#{show x}|]
              return (x <> replicate (pcnt - len) SqlNull)
 
+-- | convert the sql value to a more specific type based on the meta data
 convertUsingMeta :: HasCallStack => (ColDataType, ColumnMeta) -> SqlValue -> SqlValue
 convertUsingMeta (cd, ColumnMeta{}) a = case a of
   SqlByteString bs -> case cd of

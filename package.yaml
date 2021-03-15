@@ -29,20 +29,16 @@ flags:
     default: no
 
 dependencies:
-- async
 - bytestring
 - containers
 - database
 - deepseq
 - dhall >= 1.32.0
-- directory
 - formatting
 - Frames >= 0.6.1
 - generics-sop
-- ghc-prim
 - hdbc-odbc2
 - lens
-- logging-dhall
 - logging-simple
 - monad-logger
 - mtl
@@ -56,7 +52,6 @@ dependencies:
 - text
 - these >= 1.0.0
 - time
-- transformers
 - typelevel
 - unliftio
 - unliftio-core

@@ -116,6 +116,7 @@ END
        COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to mssql " ++ show o
   limitSql _ = maybe mempty (\n -> [st|top #{n}|])
 
+-- | typed select query for the meta data of a sql table
 getMSColumnMetaSql :: DBMS db -> Table (DBMS db) -> Sql (DBMS db) '[] '[Sel ColumnMeta]
 getMSColumnMetaSql db t =
   let cl = maybe mempty (<> ".") (getEffectiveSchema db t)
@@ -143,7 +144,7 @@ WHERE
 order by c.column_id
 |]
 
-
+-- | convert mssql specific column type to generic ColDataType
 mssqlType :: ColumnMeta -> ColDataType
 mssqlType (cLength &&& T.toLower . cType -> (len,ss))
   | ss == "varchar" = if len == -1 then CCLOB else CString
@@ -159,6 +160,7 @@ mssqlType (cLength &&& T.toLower . cType -> (len,ss))
   | ss `elem` ["clob","text"] = CCLOB
   | otherwise = COther ss
 
+-- | support trusted and user/pwd authentication
 connAuthMSSQLCSharp :: MSAuthn -> String
 connAuthMSSQLCSharp Trusted = "Trusted_Connection=True"
 connAuthMSSQLCSharp (UserPwd uid (Secret pwd)) = T.unpack [st|User Id=#{uid};Password=#{pwd}|]
@@ -215,6 +217,7 @@ group by SchemaName, TableName, pkname, p.fill_factor, p.type_desc
 
 type PKeysMSSQL db = F '["tab" ::: Table (DBMS db), "pkname" ::: Text, "cname" ::: Text, "key_ordinal" ::: Int, "fillfactor" ::: Int, "type_desc" ::: Text]
 
+-- | extract primary keys for all tables in the database
 getPrimaryKeysMS :: GConn (DBMS db) => Sql (DBMS db) '[] '[Sel (PKeysMSSQL db)]
 getPrimaryKeysMS = mkSql "getPrimaryKeysMS" [st|
 select
@@ -237,20 +240,24 @@ select
  order by tab, pkname,indcol.key_ordinal
 |]
 
+-- | sum type for clustered vs non clustered primary key
 data Clustered = Clustered | NonClustered deriving (Show,Eq)
 
 instance ToText Clustered where
   toText = fromText . T.pack . show
 
+-- | add a primary key
 addPrimaryKeyMS :: GConnWrite (DBMS db) => Table (DBMS db) -> Text -> Clustered -> Text -> Sql (DBMS db) '[] '[U0]
 addPrimaryKeyMS tab pkname clustered cnames =
   mkSql "addPrimaryKeyMS" [st|ALTER TABLE #{tab} ADD CONSTRAINT [#{pkname}] PRIMARY KEY #{clustered} ( #{cnames} )|]
 
+-- | create an index
 createIndexMS :: GConnWrite (DBMS db) => Table (DBMS db) -> Text -> Text -> Sql (DBMS db) '[] '[U0]
 createIndexMS tab ixname cnames = mkSql "createIndexMS" [st|create index [ix_#{ixname}] on #{tab} ( #{cnames} )|]
 
 type FKeysMSSQL db = F '["tab" ::: Table (DBMS db), "colname" ::: Text, "reftab" ::: Table (DBMS db), "refcolname" ::: Text, "fkeyname" ::: Text]
 
+-- | get all foreign keys for a database
 getForeignKeysMS :: GConn (DBMS db) => Sql (DBMS db) '[] '[Sel (FKeysMSSQL db)]
 getForeignKeysMS = mkSql "getForeignKeysMS" [st|
 SELECT
@@ -348,4 +355,19 @@ select 'XACT_ABORT',case when (16384 & @options) = 16384 then 1 else 0 end
 bcpauth :: MSAuthn -> [String]
 bcpauth Trusted = ["-T"]
 bcpauth (UserPwd uid (Secret pwd)) = ["-U" <> T.unpack uid, "-P" <> T.unpack pwd]
+
+newtype LogId = LogId { unLogId :: Int } deriving (Show, Eq, Num, Enum, ToText, G.Generic)
+instance NFData LogId
+
+-- | bcp compatible name
+showTableForBCP :: Table a -> LogId -> String
+showTableForBCP Table {..} lid =
+  let q0 = case (tDb, tSchema) of
+             (Nothing, Schema Nothing) -> ""
+             (Nothing, ConnSchema) -> ""
+             (Just a, Schema Nothing)  -> a <> "__"
+             (Just a, ConnSchema)  -> a <> "__"
+             (Nothing, Schema (Just b))  -> b <> "_"
+             (Just a, Schema (Just b))   -> a <> "_" <> b <> "_"
+  in T.unpack [st|#{q0}#{tName}.#{lid}|]
 

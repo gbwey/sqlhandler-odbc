@@ -24,7 +24,7 @@ Description : Contains GConn class
 Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
 
-Each database type needs to implement GConn
+Each rdbms type needs to implement GConn
 -}
 module HSql.ODBC.GConn (
     module HSql.ODBC.GConn
@@ -63,16 +63,19 @@ import Database.Util
 import Logging (trim)
 import Control.DeepSeq (NFData)
 
+-- | load dhall connection configuration using the key
 loadConn :: forall a . D.FromDhall a => Text -> IO a
 loadConn key = D.input D.auto ("let x = ./conn.dhall in x." <> key)
 
 data Writeable
 data ReadOnly
 
+-- | support for various schema types across rdbmss'
 data Schema = ConnSchema | Schema !(Maybe Text) deriving (Show,Eq,Ord,G.Generic)
 
 instance NFData Schema
 
+-- | sql table definition
 data Table a = Table {
                  tDb :: !(Maybe Text)
                , tSchema :: !Schema
@@ -98,6 +101,7 @@ instance GConn a => IsString (Table a) where
       Left _ -> Table Nothing ConnSchema (Q.stripQuotes mdelims (T.strip (T.pack ss))) True
       Right a -> a
 
+-- | parse a table using rdbms specific delimiters
 parseTableLR :: forall a. GConn a => String -> Either String (Table a)
 parseTableLR ss' =
     let mdelims = getDelims (Proxy @a)
@@ -168,6 +172,8 @@ class (DConn a, ToText a) => GConn a where  -- Show a was causing infinite loop 
   -- | limit clause per database. eg rownum for oracle / limit for postgres / top for mssql
   limitSql :: p a -> Maybe Int -> Text
 
+
+-- | type level record describing a sql table
 type GetAllTablesCount a = F '["name" ::: Table a, "size" ::: Int, "created" ::: Maybe UTCTime, "updated" ::: Maybe UTCTime]
 
 -- | metadata types
@@ -189,6 +195,7 @@ instance NFData ColDataType
 instance FromField ColDataType where
   fromField = pure . show
 
+-- | column meta data
 data ColumnMeta = ColumnMeta {
    cName :: !Text
  , cType :: !Text
@@ -215,23 +222,11 @@ unsafeCastTable db Table {..} = Table Nothing (Schema (getSchema db)) tName True
 unsafeCastTableWithDB :: GConn b => b -> Table a -> Table b
 unsafeCastTableWithDB db Table {..} = Table (getDb db) (Schema (getSchema db)) tName True
 
+-- | display table
 showTable :: GConn a => Table a -> Text
 showTable t = showTableImpl (getDelims t) t
 
-newtype LogId = LogId { unLogId :: Int } deriving (Show, Eq, Num, Enum, ToText, G.Generic)
-instance NFData LogId
-
-showTableForBCP :: Table a -> LogId -> String
-showTableForBCP Table {..} lid =
-  let q0 = case (tDb, tSchema) of
-             (Nothing, Schema Nothing) -> ""
-             (Nothing, ConnSchema) -> ""
-             (Just a, Schema Nothing)  -> a <> "__"
-             (Just a, ConnSchema)  -> a <> "__"
-             (Nothing, Schema (Just b))  -> b <> "_"
-             (Just a, Schema (Just b))   -> a <> "_" <> b <> "_"
-  in T.unpack [st|#{q0}#{tName}.#{lid}|]
-
+-- | escape a field using rdbms delimiters
 escapeField :: GConn a => p a -> Text -> Text
 escapeField p fld =
   case getDelims p of
@@ -243,12 +238,14 @@ dropped = "Dropped"
 notfound = "NotFound"
 found = "Found"
 
+-- | get effective schema name if present
 getEffectiveSchema :: GConn a => a -> Table a -> Maybe Text
 getEffectiveSchema db t =
   case tSchema t of
     ConnSchema -> getSchema db
     Schema a -> a
 
+-- | get effective table name
 getEffectiveTable :: GConn a => a -> Table a -> Table a
 getEffectiveTable db t =
   case tSchema t of
@@ -266,6 +263,7 @@ instance GConn a => Conv (Table a) where
 instance GConn a => DefEnc (Enc (Table a)) where
   defEnc = encTable
 
+-- | sql encoder for the table name
 encTable :: GConn a => Enc (Table a)
 encTable = Enc $ \t -> [SqlString (T.unpack (showTable t))]
 
@@ -295,6 +293,7 @@ parseCreateTableSql (T.unpack . sSql -> s) =
   fmap (\(Q.PTable t xs) -> (toTableName t, xs)) (Q.parseCreateTableSqlImpl s)
 
 -- uses Upd with a predicate for the number of rows that need to be inserted
+-- | generates the insert statement based on sql create statement
 insertTableSqlAuto :: GConn db => Sql db a b -> Either Text (ISql db a '[Upd])
 insertTableSqlAuto s =
   parseCreateTableSql s <&>
