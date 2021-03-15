@@ -21,6 +21,8 @@ License     : BSD-3
 
 Implementation of GConn for ms sql server.
 -}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveGeneric #-}
 module HSql.ODBC.DBMSSQL (
     module HSql.ODBC.DBMSSQL
   , module Database.MSSql
@@ -41,6 +43,8 @@ import GHC.Stack
 import Data.Text.Lazy.Builder (fromText)
 import qualified Language.Haskell.TH.Syntax as TH (runIO,lift)
 import Database.MSSql
+import qualified GHC.Generics as G (Generic)
+import Control.DeepSeq (NFData)
 
 type instance WriteableDB (DBMS Writeable) = 'True
 

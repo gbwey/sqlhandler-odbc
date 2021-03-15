@@ -77,9 +77,6 @@ import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
 import Logging -- (ML, GBException(..), newline)
 import qualified Data.List.NonEmpty as N
-import Control.Monad.IO.Unlift (MonadUnliftIO(..))
-import Control.Monad.Reader
-import Debug.Trace
 
 -- | wrapper for a hdbc connection
 newtype HConn a = HConn H.Connection deriving H.IConnection

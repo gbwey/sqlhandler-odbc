@@ -123,7 +123,7 @@ getCleanName :: ( E.MonadError SqlTHException m
                   -> Maybe Text
                   -> m Text
 getCleanName fn i mt =
-  case  (fn <$> mt) >>= cleanName of
+  case  mt >>= cleanName . fn of
     Nothing -> tryout 2 ("anon_" <> T.pack (show i))
     Just t1 -> tryout 3 t1
 
