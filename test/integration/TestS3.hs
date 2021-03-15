@@ -39,23 +39,9 @@ import qualified UnliftIO as UE
 main :: IO ()
 main = Spec.spec
 
--- as soon as we use liftIO we need monadio
--- as soon as we use logDebug we need monadlogger!
--- if we only use HSql stuff then we are ok
--- need ML e m cos of jim: so monadio and monadlogger are now redundant
--- fd $ unAppM fred
---fred :: (ML e m, HSql m, MonadIO m, MonadLogger m) => m [ResultSet]
-fred :: (HSql m, MonadLogger m, MonadIO m) => m [ResultSet]
-fred = timeCommandX [st|test|] $ do
-  x <- runSqlRawX s3W [] "select 1"
-  $logDebug [st|dude|]
-  -- jim
-  liftIO $ putStrLn "hello world"
-  return x
-
-jim :: ML e m => m ()
-jim = do
-  $logDebug [st|dudely|]
+test1 :: ML e m => m ()
+test1 = do
+  $logDebug [st|test1|]
   x <- runSqlRaw s3W [] "select 1"
   liftIO $ print x
 
