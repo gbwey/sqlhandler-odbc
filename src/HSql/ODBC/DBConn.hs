@@ -21,6 +21,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE NoStarIsType #-}
+{-# LANGUAGE PatternSynonyms #-}
 {- |
 Module      : HSql.ODBC.DBConn
 Description : Contains methods for running sql against databases
@@ -75,8 +76,11 @@ import qualified Language.Haskell.TH as TH (Name)
 import Data.UUID (UUID)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
-import Logging -- (ML, GBException(..), newline)
+import Logging (newline, pattern GBException, ML)
 import qualified Data.List.NonEmpty as N
+import qualified Text.Regex.Applicative as R
+import Data.Char (isSpace)
+import Control.Applicative
 
 -- | wrapper for a hdbc connection
 newtype HConn a = HConn H.Connection deriving H.IConnection
@@ -582,11 +586,9 @@ handleBoth (n1,n2) =
                GT -> More (n1,n2,avg)
                EQ -> Same n1
 
--- use X.replace (" " <$ some (X.psym isSpace))
 -- | remove newlines and extra spaces
 flattenSql :: Text -> Text
-flattenSql zs = cv $ T.replace "\r" " " $ T.replace "\n" " " $ T.strip zs
-  where cv xs = let r = T.replace "  " " " xs in if r==xs then r else cv r
+flattenSql = T.pack . R.replace (" " <$ some (R.psym isSpace)) . T.unpack . T.strip
 
 -- | convert from sqlvalue to bcp compatible string
 toBcpFromSql :: HasCallStack => SqlValue -> ByteString

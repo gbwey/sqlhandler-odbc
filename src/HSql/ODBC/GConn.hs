@@ -60,8 +60,9 @@ import Data.Vinyl
 import qualified Language.Haskell.TH as TH (Q,Exp)
 import qualified Dhall as D (FromDhall,input,auto)
 import Database.Util
-import Logging (trim)
 import Control.DeepSeq (NFData)
+import Data.List (dropWhileEnd)
+import Data.Char (isSpace)
 
 -- | load dhall connection configuration using the key
 loadConn :: forall a . D.FromDhall a => Text -> IO a
@@ -331,3 +332,6 @@ commonFields mpref sql =
 showSchema :: Schema -> Text
 showSchema ConnSchema = "ConnSchema"
 showSchema (Schema (fromMaybe "" -> s)) = s
+
+trim :: String -> String
+trim = dropWhile isSpace . dropWhileEnd isSpace
