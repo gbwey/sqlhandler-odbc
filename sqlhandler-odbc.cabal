@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ebe2bba3a687ce2ef1a996961dc11413cba2fe6d97f56e0dd2b1844e040d139c
+-- hash: 380160b2934a4c88de237dfabc5aeee50fd4c5c34f2827e2275f21816b0f5e0d
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -63,7 +63,6 @@ flag pg
 
 library
   exposed-modules:
-      HSql.ODBC.ConcurrencyUtils
       HSql.ODBC.DBConn
       HSql.ODBC.DBFrame
       HSql.ODBC.DBMSSQL
@@ -73,43 +72,50 @@ library
       HSql.ODBC.DBSqlite
       HSql.ODBC.GConn
       HSql.ODBC.Sql_TH
-      HSql.ODBC.SqlParser
       HSql.ODBC.SqlUtils_TH
+      HSql.ODBC.StreamingUtils
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Wno-star-is-type -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wunused-type-patterns -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Wno-star-is-type -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wunused-type-patterns -Wredundant-constraints -Wsimplifiable-class-constraints -Wmonomorphism-restriction -Wmissing-deriving-strategies -Wmissing-local-signatures -Widentities
   build-depends:
       Frames >=0.6.1
     , base >=4.7 && <=5.1
+    , baseutils
     , bytestring
+    , conduit
     , containers
+    , coreutils
     , database
     , deepseq
     , dhall >=1.32.0
+    , docutils
+    , extra
     , formatting
+    , generic-lens
     , generics-sop
     , hdbc-odbc2
     , lens
     , logging-simple
+    , megaparsec
     , monad-logger
     , mtl
-    , path
-    , path-io
-    , regex-applicative
+    , pretty-simple
+    , prettyprinter
+    , replace-megaparsec
+    , resourcet
+    , safe
+    , semigroupoids
     , shakespeare
     , sqlhandler
     , tagged
     , template-haskell
     , text
+    , th-compat
     , these >=1.0.0
     , time
-    , typelevel
     , unliftio
-    , unliftio-core
     , uuid
     , vinyl >=0.10.0.0
-  if impl(ghc >= 8.8)
-    ghc-options: -fwrite-ide-info -hiedir=.hie -Widentities
   default-language: Haskell2010
 
 test-suite spec
@@ -118,46 +124,55 @@ test-suite spec
   other-modules:
       TestConnections
       TestSqlite_TH
-      TestDBConn
-      TestSqlParser
+      DBFake
       Spec
+      TestDBConn
+      Paths_sqlhandler_odbc
   hs-source-dirs:
       test/integration
       test/unit
-  ghc-options: -threaded -O0 -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wunused-type-patterns -Wredundant-constraints
+  ghc-options: -threaded -O0 -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wunused-type-patterns -Wredundant-constraints -Wmissing-deriving-strategies -Widentities -Wno-missing-local-signatures
   build-depends:
       Frames >=0.6.1
-    , QuickCheck
     , base
+    , baseutils
     , bytestring
+    , conduit
     , containers
+    , coreutils
     , database
     , deepseq
     , dhall >=1.32.0
+    , docutils
+    , extra
     , formatting
+    , generic-lens
     , generics-sop
     , hdbc-odbc2
     , hspec
     , lens
     , logging-simple
+    , megaparsec
     , monad-logger
     , mtl
-    , path
-    , path-io
-    , predicate-typed
-    , regex-applicative
+    , pretty-simple
+    , prettyprinter
+    , replace-megaparsec
+    , resourcet
+    , safe
+    , semigroupoids
     , shakespeare
     , sqlhandler
     , sqlhandler-odbc
+    , stm
     , tagged
     , tasty
     , tasty-hunit
-    , tasty-quickcheck
     , template-haskell
     , text
+    , th-compat
     , these >=1.0.0
     , time
-    , typelevel
     , unliftio
     , unliftio-core
     , uuid
@@ -177,6 +192,4 @@ test-suite spec
   if flag(my)
     other-modules:
         TestMY_TH
-  if impl(ghc >= 8.8)
-    ghc-options: -fwrite-ide-info -hiedir=.hie -Widentities
   default-language: Haskell2010

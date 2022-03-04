@@ -1,4 +1,4 @@
-packages: *.cabal ../{database,logging-simple,logging-dhall,table-layout,hdbc-odbc2,predicate-typed,typelevel,sqlhandler}
+packages: *.cabal ../{database,logging-simple,table-layout,hdbc-odbc2,baseutils,coreutils,docutils,sqlhandler}
 
 package these
   flags: -aeson -assoc -semigroupoids -QuickCheck

@@ -1,24 +1,25 @@
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE NoStarIsType #-}
-{-|
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ViewPatterns #-}
+
+{- |
 Module      : HSql.ODBC.GConn
 Description : Contains GConn class
 Copyright   : (c) Grant Weyburne, 2016
@@ -27,187 +28,220 @@ License     : BSD-3
 Each rdbms type needs to implement GConn
 -}
 module HSql.ODBC.GConn (
-    module HSql.ODBC.GConn
-  , module Database.Util
- ) where
-import Prelude hiding (FilePath)
-import Text.Shakespeare.Text
-import qualified Data.Text as T
-import Data.Text (Text)
-import qualified Database.HDBC.ODBC as H
-import Database.HDBC (SqlValue(..))
-import Data.Maybe
-import Data.Text.Lazy.Builder (fromText)
-import Data.Proxy
+  module HSql.ODBC.GConn,
+  module Database.Util,
+) where
+
 import Control.Arrow
+import Control.DeepSeq (NFData)
+import Control.Lens
+import Data.Either
+import Data.Generics.Product
+import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.List.NonEmpty as N
+import Data.Maybe
+import Data.Proxy
+import Data.Semigroup.Foldable (intercalate1)
 import Data.String
+import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Text.Lazy.Builder (fromText)
+import qualified Data.Text.Lazy.Builder as TLB
 import Data.Time
-import qualified HSql.ODBC.SqlParser as Q
-import HSql.ODBC.SqlParser (PType(..))
-import Control.Lens hiding (at, (<.>), (:>))
-import Text.Regex.Applicative (RE,(=~))
-import HSql.Core.Decoder
-import HSql.Core.Encoder (DefEnc(..),Enc(..))
-import HSql.Core.Conv (Conv(..))
-import HSql.Core.Sql
-import HSql.Core.VinylUtils
-import HSql.Core.ErrorHandler (failCE)
-import HSql.Core.TablePrinter (FromField(..))
-import qualified Generics.SOP as GS (HasDatatypeInfo,Generic)
+import Data.Vinyl
+import qualified Database.HDBC.ODBC as H
+import Database.Util
+import qualified Dhall as D (FromDhall, auto, input)
+import DocUtils.Condition
+import DocUtils.Doc
+import DocUtils.Time
+import qualified Formatting.Buildable as FF
 import qualified GHC.Generics as G (Generic)
 import GHC.Stack (HasCallStack)
-import Data.Vinyl
-import qualified Language.Haskell.TH as TH (Q,Exp)
-import qualified Dhall as D (FromDhall,input,auto)
-import Database.Util
-import Control.DeepSeq (NFData)
-import Data.List (dropWhileEnd)
-import Data.Char (isSpace)
+import qualified Generics.SOP as GS (Generic, HasDatatypeInfo)
+import HSql.Core
+import HSql.Core.TablePrinter (FromCell (..))
+import HSql.Core.VinylUtils
+import qualified Language.Haskell.TH as TH (Exp, Q)
+import Text.Shakespeare.Text
+import Utils.Error
+import Utils.Positive
+import Prelude hiding (FilePath)
 
 -- | load dhall connection configuration using the key
-loadConn :: forall a . D.FromDhall a => Text -> IO a
+loadConn :: forall a. D.FromDhall a => Text -> IO a
 loadConn key = D.input D.auto ("let x = ./conn.dhall in x." <> key)
 
+-- | writeable sql marker
 data Writeable
+
+-- | readonly sql marker
 data ReadOnly
 
--- | support for various schema types across rdbmss'
-data Schema = ConnSchema | Schema !(Maybe Text) deriving (Show,Eq,Ord,G.Generic)
+{- | support for various schema types across rdbmss'
+ if a table has connschema then will grab the schema from the connection
+-}
+data Schema = ConnSchema | Schema !(Maybe TName) deriving stock (Show, Eq, Ord, G.Generic)
 
 instance NFData Schema
 
 -- | sql table definition
-data Table a = Table {
-                 tDb :: !(Maybe Text)
-               , tSchema :: !Schema
-               , tName :: !Text
-               , tTable :: !Bool
-               } deriving (Show, Eq, Ord, Functor, G.Generic)
+data Table a = Table
+  { tDb :: !(Maybe TName)
+  , tSchema :: !Schema
+  , tName :: !TName
+  , tTable :: !Bool
+  }
+  deriving stock (Show, Eq, Ord, Functor, G.Generic)
+
+instance FF.Buildable (Table a) where
+  build = TLB.fromText . showTable
 
 instance NFData a => NFData (Table a)
 
 instance GS.Generic (Table a)
 instance GS.HasDatatypeInfo (Table a)
 
-instance FromField Schema where
-  fromField = pure . show
+instance FromCell Schema where
+  fromCell o iss lr = fromCell o (iss |> (1, "Schema")) lr . show
 
-instance GConn a => FromField (Table a) where
-  fromField = pure . T.unpack . showTable
+instance FromCell (Table a) where
+  fromCell o iss lr = fromCell o (iss |> (1, "Table")) lr . T.unpack . showTable
 
 instance GConn a => IsString (Table a) where
   fromString ss =
-    let mdelims = getDelims (Proxy @a)
-    in case parseTableLR ss of -- should be fail?? and not use IsString?
-      Left _ -> Table Nothing ConnSchema (Q.stripQuotes mdelims (T.strip (T.pack ss))) True
+    case parseTableLR ss of
+      Left e -> normalError $ "Table:fromString:" ++ e
       Right a -> a
 
--- | parse a table using rdbms specific delimiters
-parseTableLR :: forall a. GConn a => String -> Either String (Table a)
-parseTableLR ss' =
-    let mdelims = getDelims (Proxy @a)
-        ss = trim ss'
-    in maybe (Left ("parseTableLR: failed to parse[" ++ ss' ++ "]")) Right (ss =~ pp1 mdelims)
+-- | get a temporary table name using current date and a prefix
+getTempTableName :: Table db -> IO (Table db)
+getTempTableName t = do
+  tm <- getUtcTimeCorrected
+  return $ t & the @"tName" . tNameRawLens <>~ ('_' :| formatUtc tm)
 
-pp1 :: Maybe (Char, Char) -> RE Char (Table a)
-pp1 mdelims = (\(ma, b, c) -> Table ma (Schema b) c True) <$> Q.tableParser mdelims
+-- | parse a mssql create table definition
+parseTableLR :: forall a. (HasCallStack, GConn a) => String -> Either String (Table a)
+parseTableLR ss =
+  case tableParser (getDelims (Proxy @a)) (T.pack ss) of
+    Left e -> Left $ "parseTableLR: failed to parse[" ++ ss ++ "] e=" ++ T.unpack e
+    Right (TNames ma mb c) -> Right $ Table ma (maybe ConnSchema (Schema . Just) mb) c True
 
-instance GConn a => ToText (Table a) where
+instance ToText (Table a) where
   toText = fromText . showTable
 
 -- bearbeiten: does this make sense for eg mysql and oracle
-showTableImpl :: Maybe (Char,Char) -> Table a -> Text
-showTableImpl mq Table {..} =
-  let (q1,q2) = maybe (mempty,mempty) (T.singleton *** T.singleton) mq
-      q0 = case (tDb, tSchema) of
-             (Nothing, Schema Nothing) -> ""
-             (Nothing, ConnSchema) -> ""
-             (Just a, Schema Nothing)  -> a <> ".."
-             (Just a, ConnSchema)  -> a <> ".."
-             (Nothing, Schema (Just b))  -> b <> "."
-             (Just a, Schema (Just b))   -> a <> "." <> b <> "."
-  in q0 <> q1 <> tName <> q2
 
+-- | render a table as text for use in sql expressions
+showTable :: Table a -> Text
+showTable t =
+  (<> showTName (tName t)) $ case (tDb t, tSchema t) of
+    (Nothing, Schema Nothing) -> mempty
+    (Nothing, ConnSchema) -> mempty
+    (Just a, Schema Nothing) -> showTName a <> ".."
+    (Just a, ConnSchema) -> showTName a <> ".."
+    (Nothing, Schema (Just b)) -> showTName b <> "."
+    (Just a, Schema (Just b)) -> showTName a <> "." <> showTName b <> "."
+
+-- | writeable constraint
 type GConnWrite db = (WriteableDB db ~ 'True, GConn db)
 
--- todo: provide runSqlRawE that allows you to pass in extra odbc params or just use runSqlRawI that allows you to pass in the connection!
 -- | creates a database connection
-getConn' :: GConn a
-      => [(Text, Text)]
-      -> a
-      -> IO H.Connection
+getConn' ::
+  (HasCallStack, GConn a) =>
+  [(Text, Text)] ->
+  a ->
+  IO H.Connection
 getConn' odbcparams db =
-  let cs = connText db
+  let cs = T.strip $ connText db
+      lastchar = case T.unsnoc cs of
+        Nothing -> normalError $ T.unpack [st|getConn': connText is empty! odbcparams=#{psi odbcparams} db=#{db}|]
+        Just (_, a) -> a
       ret = case odbcparams of
-              [] -> mempty
-              _:_ -> let xs = T.intercalate ";" (map (\(a,b) -> a <> "=" <> b) odbcparams)
-                   in (if T.last cs == ';' then "" else ";") <> xs
-  in H.connectODBC (T.unpack (cs <> ret))
+        [] -> mempty
+        _ : _ ->
+          let xs = T.intercalate ";" (map (\(a, b) -> a <> "=" <> b) odbcparams)
+           in if lastchar == ';'
+                then xs
+                else T.cons ';' xs
+   in H.connectODBC (T.unpack (cs <> ret))
 
 -- | 'GConn' is the central class to this package. Each database type needs to implement this.
-class (DConn a, ToText a) => GConn a where  -- Show a was causing infinite loop on compile if we omit MyLogger: to do with Streaming undecidableinstances and show instance for the stream
+class (DConn a, ToText a) => GConn a where -- Show a was causing infinite loop on compile if we omit MyLogger: to do with Streaming undecidableinstances and show instance for the stream
+
   -- | given a key it loads a Template Haskell expression for the database connection
   loadConnTH :: p a -> Text -> TH.Q TH.Exp
+
   getConn :: a -> IO H.Connection
   getConn = getConn' []
+
   -- | the sqlite odbc driver misbehaves so we need to ignore the disconnect error
-  -- todo: is this still a problem (still on windows but need to test)
   ignoreDisconnectError :: proxy a -> Bool
   ignoreDisconnectError _ = False
+
   -- | lists each table in a given database
   getAllTablesSql :: a -> Sql a '[] '[Sel (Table a)]
+
   -- | lists each view in a given database
   getAllViewsSql :: a -> Sql a '[] '[Sel (Table a)]
+
   -- | does the table exist
-  existsTableSql :: a -> Table a -> Sql a '[] '[SelOne Text]
+  existsTableSql :: a -> Table a -> Sql a '[] '[SelRowCol Text]
+
   -- | drops the table if it exists
   dropTableIfExistsSql :: a -> Table a -> Sql a '[] '[Upd]
+
   -- | drops the view if it exists
   dropViewIfExistsSql :: a -> Table a -> Sql a '[] '[Upd]
+
   -- | returns column metadata for a table -- ignores the database!
   getColumnMetaSql :: a -> Table a -> (ColumnMeta -> ColDataType, Sql a '[] '[Sel ColumnMeta])
+
   translateColumnMeta :: HasCallStack => p a -> (ColDataType, ColumnMeta) -> Text
+
   -- | optional fast way to get list of tables and rowcounts
   getAllTablesCountSql :: proxy a -> Maybe (Sql a '[] '[Sel (GetAllTablesCount a)])
   getAllTablesCountSql = const Nothing
+
   -- | limit clause per database. eg rownum for oracle / limit for postgres / top for mssql
   limitSql :: p a -> Maybe Int -> Text
-
 
 -- | type level record describing a sql table
 type GetAllTablesCount a = F '["name" ::: Table a, "size" ::: Int, "created" ::: Maybe UTCTime, "updated" ::: Maybe UTCTime]
 
 -- | metadata types
-data ColDataType =
-   CFixedString
- | CString
- | CInt
- | CDateTime
- | CDate
- | CFloat
- | CBool
- | CBinary
- | CCLOB
- | CBLOB
- | COther !Text deriving (Show, Eq, Ord, G.Generic)
+data ColDataType
+  = CFixedString
+  | CString
+  | CInt
+  | CDateTime
+  | CDate
+  | CFloat
+  | CBool
+  | CBinary
+  | CCLOB
+  | CBLOB
+  | COther !Text
+  deriving stock (Show, Eq, Ord, G.Generic)
 
 instance NFData ColDataType
 
-instance FromField ColDataType where
-  fromField = pure . show
+instance FromCell ColDataType where
+  fromCell o iss lr = fromCell o (iss |> (1, "ColDataType")) lr . show
 
 -- | column meta data
-data ColumnMeta = ColumnMeta {
-   cName :: !Text
- , cType :: !Text
- , cIsNull :: !Bool
- , cLength :: !Int
- , cPrecision :: !(Maybe Int)
- , cScale :: !(Maybe Int)
- , cComputed :: !Bool
- , cIdentity :: !Bool
- , cPkey :: !Int
- } deriving (Show, Eq, G.Generic)
+data ColumnMeta = ColumnMeta
+  { cName :: !Text
+  , cType :: !Text
+  , cIsNull :: !Bool
+  , cLength :: !Int
+  , cPrecision :: !(Maybe Int)
+  , cScale :: !(Maybe Int)
+  , cComputed :: !Bool
+  , cIdentity :: !Bool
+  , cPkey :: !Int
+  }
+  deriving stock (Show, Eq, G.Generic)
 
 instance NFData ColumnMeta
 
@@ -217,26 +251,35 @@ instance GS.HasDatatypeInfo ColumnMeta
 instance DefDec (Dec ColumnMeta) where
   defDec = defD9 ColumnMeta
 
+-- | cast a table to another connection
 unsafeCastTable :: GConn b => b -> Table a -> Table b
-unsafeCastTable db Table {..} = Table Nothing (Schema (getSchema db)) tName True
+unsafeCastTable db Table{..} = Table Nothing (Schema (toTNameUnsafe <$> getSchema db)) tName True
 
+-- | cast a table to another connection and including the database name from the connection
 unsafeCastTableWithDB :: GConn b => b -> Table a -> Table b
-unsafeCastTableWithDB db Table {..} = Table (getDb db) (Schema (getSchema db)) tName True
+unsafeCastTableWithDB db Table{..} = Table (toTNameUnsafe <$> getDb db) (Schema (toTNameUnsafe <$> getSchema db)) tName True
 
--- | display table
+{- | display table
 showTable :: GConn a => Table a -> Text
-showTable t = showTableImpl (getDelims t) t
+showTable t = showTableImpl t
+-}
 
 -- | escape a field using rdbms delimiters
 escapeField :: GConn a => p a -> Text -> Text
 escapeField p fld =
-  case getDelims p of
-    Just (b,e) -> T.singleton b <> fld <> T.singleton e
-    Nothing -> fld
+  let (b, e) = N.head (getDelims p)
+   in T.singleton b <> fld <> T.singleton e
 
-dropped, notfound, found :: Text
+-- | dropped table text
+dropped :: Text
 dropped = "Dropped"
+
+-- | not found table text
+notfound :: Text
 notfound = "NotFound"
+
+-- | found table text
+found :: Text
 found = "Found"
 
 -- | get effective schema name if present
@@ -244,94 +287,70 @@ getEffectiveSchema :: GConn a => a -> Table a -> Maybe Text
 getEffectiveSchema db t =
   case tSchema t of
     ConnSchema -> getSchema db
-    Schema a -> a
+    Schema a -> showTName <$> a
 
 -- | get effective table name
 getEffectiveTable :: GConn a => a -> Table a -> Table a
 getEffectiveTable db t =
   case tSchema t of
-    ConnSchema -> t { tSchema = Schema (getSchema db) }
+    ConnSchema -> t{tSchema = Schema (toTNameUnsafe <$> getSchema db)}
     Schema _ -> t
 
 instance GConn a => DefDec (Dec (Table a)) where
   defDec = decGeneric
 
 instance GConn a => Conv (Table a) where
-  conv xs = conv @String xs >>= \x -> case parseTableLR x of
-                                        Right y -> return y
-                                        Left e -> failCE "Table" e xs
+  conv xs =
+    conv @String xs >>= \x -> case parseTableLR x of
+      Right y -> return y
+      Left e -> failCE "Table" e xs
 
-instance GConn a => DefEnc (Enc (Table a)) where
+instance DefEnc (Enc (Table a)) where
   defEnc = encTable
 
 -- | sql encoder for the table name
-encTable :: GConn a => Enc (Table a)
+encTable :: Enc (Table a)
 encTable = Enc $ \t -> [SqlString (T.unpack (showTable t))]
 
-cntField :: PType -> Int
-cntField = \case
-  PIdentity {} -> 0
-  PColumn {} -> 1
-  PConstraint {} -> 0
-  POther {} -> 0
+-- | parse a create table definition and pull out the table name and columns
+parseCreateTableSql :: GConn db => Sql db a b -> VE (Table db, NonEmpty Text)
+parseCreateTableSql = fmap (((toTableName . T.unpack) *** fromList1 "parseCreateTableSql") . getInsertableFields) . createTable . sSql
 
-getField3 :: PType -> [String]
-getField3 = \case
-  PIdentity _ _ s -> [s]
-  PColumn _ _ s -> [s]
-  PConstraint {} -> []
-  POther {} -> []
-
-getField1 :: PType -> [String]
-getField1 = \case
-   PIdentity s _ _ -> [s]
-   PColumn s _ _ -> [s]
-   PConstraint {} -> []
-   POther {} -> []
-
-parseCreateTableSql :: GConn db => Sql db a b -> Either Text (Table db, [PType])
-parseCreateTableSql (T.unpack . sSql -> s) =
-  fmap (\(Q.PTable t xs) -> (toTableName t, xs)) (Q.parseCreateTableSqlImpl s)
-
--- uses Upd with a predicate for the number of rows that need to be inserted
--- | generates the insert statement based on sql create statement
-insertTableSqlAuto :: GConn db => Sql db a b -> Either Text (ISql db a '[Upd])
+-- | create an insert statement based on create table sql
+insertTableSqlAuto :: GConn db => Sql db a b -> VE (ISql db a '[Upd])
 insertTableSqlAuto s =
-  parseCreateTableSql s <&>
-   \(tab,flds) r ->
-      let (x,i) = insertTableSqlPrivate (r, sum (map cntField flds)) tab
-      in (Sql (sDescription s) (sEncoders s) (E1 UpdP) x, i)
+  parseCreateTableSql s
+    <&> \(tab, cols) rows ->
+      let (x, i) = insertTableSqlPrivate (rows, lengthPositive cols) tab
+       in (Sql (sDescription s) (sEncoders s) (E1 UpdP) x, i)
 
-insertTableSqlPrivate :: GConn db => (Int,Int) -> Table db -> (Text, Int)
-insertTableSqlPrivate (r,c) tab =
-  ([st|insert into #{tab} values #{qqrc (r,c)}|], r*c)
+-- | create a multi-insert statement with placeholders for the number of columns and rows
+insertTableSqlPrivate :: (Positive, Positive) -> Table db -> (Text, Positive)
+insertTableSqlPrivate (r, c) tab =
+  ([st|insert into #{tab} values #{qqrc (r,c)}|], r *! c)
 
+{- | generates the insert statement based on sql create statement (named columns)
+   all two must match in column order:
+     create statement in the code
+     adt in the code
+-}
+insertTableSqlNamedAuto :: GConn db => Sql db a b -> VE (ISql db a '[Upd])
+insertTableSqlNamedAuto s =
+  parseCreateTableSql s
+    <&> \(tab, cols) rows ->
+      let (x, i) = insertTableSqlNamedPrivate (rows, lengthPositive cols, intercalate1 "," cols) tab
+       in (Sql (sDescription s) (sEncoders s) (E1 UpdP) x, i)
+
+-- | create a multi-insert statement with placeholders for the number of columns and rows
+insertTableSqlNamedPrivate :: (Positive, Positive, Text) -> Table db -> (Text, Positive)
+insertTableSqlNamedPrivate (r, c, colsText) tab =
+  ([st|insert into #{tab} (#{colsText}) values #{qqrc (r,c)}|], r *! c)
+
+-- | unsafe convert a string to a 'Table'
 toTableName :: GConn a => String -> Table a
 toTableName = fromString . trim
 
-createTableFields' :: GConn db => Sql db a b -> (Table db, [String])
-createTableFields' x = getCreateTableFields x ^?! _Right
-
-countCreateTableFields :: GConn db => Sql db a b -> Either Text Int
-countCreateTableFields x = getCreateTableFields x & _Right %~ length . snd
-
-getCreateTableFields' :: GConn db => Sql db a b -> [String]
-getCreateTableFields' x = getCreateTableFields x ^?! _Right . _2
-
-getCreateTableFields :: GConn db => Sql db a b -> Either Text (Table db, [String])
-getCreateTableFields s =
-  parseCreateTableSql s & _Right . _2 %~ concatMap getField1
-
-commonFields :: HasCallStack => Maybe Text -> Text -> Text
-commonFields mpref sql =
-  let ys = mapM (Q.matchSqlField mpref) (lines $ T.unpack sql)
-  in case ys of
-       Left e -> error $ "commonFields: failed to extract fields " <> T.unpack e
-       Right zs -> T.pack (unlines (concatMap getField3 $ concat zs))
-
+-- | display schema name
 showSchema :: Schema -> Text
 showSchema ConnSchema = "ConnSchema"
-showSchema (Schema (fromMaybe "" -> s)) = s
-
-trim :: String -> String
-trim = dropWhile isSpace . dropWhileEnd isSpace
+showSchema (Schema (maybe "" showTName -> s)) = s

@@ -11,8 +11,6 @@
 * supports a configurable pretty printer of SQL results in table format leveraging SQL metadata
 * can mark your queries or connections as ReadOnly which is enforced at compile time
 * supports streaming queries using conduit combinators
-* supports [refined types](https://github.com/gbwey/predicate-typed) allowing for refined fields for any sql columns:
-    the encoding / decoding and validation is all handled
 * supports predicates for SQL update results which rollback the transaction if the predicate fails
 
 * log.dhall has the logging configuration

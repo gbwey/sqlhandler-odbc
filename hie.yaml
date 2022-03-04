@@ -1,9 +1,10 @@
 cradle:
   stack:
-   - path: ".\\src"
-     component: "sqlhandler-odbc:lib"
-   - path: ".\\test"
-     component: "sqlhandler-odbc:test:spec"
-#  cabal:
-#   - path: "."
-#     component: "lib:sqlhandler-odbc"
+    - path: "./src"
+      component: "sqlhandler-odbc:lib"
+
+    - path: "./test/integration"
+      component: "sqlhandler-odbc:test:spec"
+
+    - path: "./test/unit"
+      component: "sqlhandler-odbc:test:spec"

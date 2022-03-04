@@ -1,20 +1,18 @@
--- multiple result sets work with semicolon delimiters but cant get them to work when using placeholders ie ?
--- they work with inserts selects etc!!! ;option=67108864 [[without placeholders only!]]
 {-# OPTIONS -Wno-orphans #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE NoStarIsType #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
+
 {- |
 Module      : HSql.ODBC.DBMY
 Description : MySql
@@ -24,15 +22,18 @@ License     : BSD-3
 Implementation of GConn for mysql.
 -}
 module HSql.ODBC.DBMY where
-import Prelude hiding (FilePath)
-import Text.Shakespeare.Text (st)
+
 import Data.Text (Text)
 import qualified Data.Text as T
-import HSql.ODBC.GConn
-import HSql.Core.Sql
-import qualified Language.Haskell.TH.Syntax as TH (lift,runIO)
 import Database.MySql
+import HSql.Core.Sql
+import HSql.ODBC.GConn
+import qualified Language.Haskell.TH.Syntax as TH (lift, runIO)
+import Text.Shakespeare.Text (st)
+import Utils.Error
+import Prelude hiding (FilePath)
 
+-- | writeable instance for a mysql database
 type instance WriteableDB (DBMY Writeable) = 'True
 
 instance GConn (DBMY a) where
@@ -40,15 +41,20 @@ instance GConn (DBMY a) where
     c <- TH.runIO $ loadConn @(DBMY a) k
     TH.lift c
 
---  connText DBMY {..} = [st|#{_mydriver};Server=#{_myserver};Port=#{maybe "3306" show _myport};Database=#{_mydb};User=#{_myuid};Password=#{unSecret _mypwd};option=67108864|]
-  getAllTablesSql _ = mkSql "getAllTablesSql MySql" [st|
+  getAllTablesSql _ =
+    mkSql
+      "getAllTablesSql MySql"
+      [st|
     select concat(table_schema, '.', table_name)
     from information_schema.tables
     where table_type = 'BASE TABLE'
     and table_schema = database()
     order by table_schema, table_name
   |]
-  getAllViewsSql _ = mkSql "getAllViewsSql MySql" [st|
+  getAllViewsSql _ =
+    mkSql
+      "getAllViewsSql MySql"
+      [st|
     select concat(table_schema, '.', table_name)
     from information_schema.tables
     where table_type = 'VIEW'
@@ -57,9 +63,11 @@ instance GConn (DBMY a) where
   |]
   existsTableSql db t =
     let sch = case getEffectiveSchema db t of
-                Nothing -> mempty
-                Just s -> [st|AND table_schema = '#{s}'|]
-    in mkSql "existsTableSql MySql" [st|
+          Nothing -> mempty
+          Just s -> [st|AND table_schema = '#{s}'|]
+     in mkSql
+          "existsTableSql MySql"
+          [st|
 SELECT case when count(*) > 0 then '#{found}' else '#{notfound}' end
   FROM information_schema.tables
   WHERE 1=1
@@ -71,21 +79,22 @@ SELECT case when count(*) > 0 then '#{found}' else '#{notfound}' end
 
   getColumnMetaSql db t = (myType, getMYColumnMetaSql db t)
 
-  translateColumnMeta _ (cd, ColumnMeta {..}) =
-     case cd of
-       CString -> [st|varchar(#{cLength})|]
-       CFixedString -> [st|char(#{cLength})|]
-       CInt -> "bigint"
-       CDateTime -> "datetime"
-       CDate -> "date"
-       CFloat -> "double"
-       CBool -> "tinyint"
-       CBinary -> "varbinary(max)"
-       CBLOB -> "blob"
-       CCLOB -> "blob"
-       COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to mysql " ++ show o
+  translateColumnMeta _ (cd, ColumnMeta{..}) =
+    case cd of
+      CString -> [st|varchar(#{cLength})|]
+      CFixedString -> [st|char(#{cLength})|]
+      CInt -> "bigint"
+      CDateTime -> "datetime"
+      CDate -> "date"
+      CFloat -> "double"
+      CBool -> "tinyint"
+      CBinary -> "varbinary(max)"
+      CBLOB -> "blob"
+      CCLOB -> "blob"
+      COther o -> normalError $ "translateColumnMeta: dont know how to convert this columnmeta to mysql " ++ show o
   limitSql _ = maybe mempty (\n -> [st|limit #{n}|])
 
+-- | convert from mysql datatype to 'ColDataType'
 myType :: ColumnMeta -> ColDataType
 myType (T.toLower . cType -> ss)
   | ss == "varchar" = CString
@@ -96,27 +105,33 @@ myType (T.toLower . cType -> ss)
   --   ss `elem` ["bit", "bool","boolean"] = CBool
   | ss `elem` ["timestamp", "datetime"] = CDateTime
   | ss == "date" = CDate
-  | ss `elem` ["varbinary","binary"] = CBinary
+  | ss `elem` ["varbinary", "binary"] = CBinary
   | ss `elem` ["tinyblob", "blob", "mediumblob", "longblob"] = CBLOB
   | ss == "text" = CCLOB
   | otherwise = COther ss
 
+-- | get the database schema
 mySchemaDBSql :: DBMY a -> Text
 mySchemaDBSql = mySchemaSql' . getSchema
 
+-- | get the table schema
 mySchemaTableSql :: DBMY a -> Table (DBMY a) -> Text
 mySchemaTableSql db =
   mySchemaSql' . getEffectiveSchema db
 
+-- | get the schema
 mySchemaSql' :: Maybe Text -> Text
 mySchemaSql' =
   \case
     Nothing -> " NOT IN ('performance_schema', 'information_schema')"
     Just sch -> [st| = '#{sch}'|]
 
+-- | sql for get metadata on a table
 getMYColumnMetaSql :: DBMY db -> Table (DBMY db) -> Sql (DBMY db) '[] '[Sel ColumnMeta]
 getMYColumnMetaSql db t =
-  mkSql "getMYColumnMetaSql" [st|
+  mkSql
+    "getMYColumnMetaSql"
+    [st|
 SELECT
       column_name
     , data_type
@@ -132,4 +147,3 @@ WHERE table_name = '#{tName t}'
 and   table_schema #{mySchemaTableSql db t}
 ORDER BY ordinal_position
 |]
-

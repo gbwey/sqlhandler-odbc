@@ -30,31 +30,40 @@ flags:
 
 dependencies:
 - bytestring
+- baseutils
+- conduit
 - containers
+- coreutils
 - database
 - deepseq
 - dhall >= 1.32.0
+- docutils
+- extra
 - formatting
 - Frames >= 0.6.1
+- generic-lens
 - generics-sop
 - hdbc-odbc2
 - lens
 - logging-simple
+- megaparsec
 - monad-logger
 - mtl
-- path
-- path-io
-- regex-applicative
+- pretty-simple
+- prettyprinter
+- replace-megaparsec
+- resourcet
+- safe
+- semigroupoids
 - shakespeare
 - sqlhandler
 - tagged
 - template-haskell
 - text
+- th-compat
 - these >= 1.0.0
 - time
-- typelevel
 - unliftio
-- unliftio-core
 - uuid
 - vinyl >= 0.10.0.0
 
@@ -70,13 +79,11 @@ library:
   - -Wpartial-fields
   - -Wunused-type-patterns
   - -Wredundant-constraints
-  when:
-   - condition: impl(ghc >= 8.8)
-     ghc-options:
-     - -fwrite-ide-info
-     - -hiedir=.hie
-     - -Widentities
-
+  - -Wsimplifiable-class-constraints
+  - -Wmonomorphism-restriction
+  - -Wmissing-deriving-strategies
+  - -Wmissing-local-signatures
+  - -Widentities
   other-modules: []
   dependencies:
   - base >=4.7 && <=5.1
@@ -94,24 +101,20 @@ tests:
     - -Wpartial-fields
     - -Wunused-type-patterns
     - -Wredundant-constraints
+    - -Wmissing-deriving-strategies
+    - -Widentities
+    - -Wno-missing-local-signatures
     source-dirs:
     - test/integration
     - test/unit
     dependencies:
       - base
       - sqlhandler-odbc
-      - predicate-typed
       - hspec
-      - QuickCheck
+      - stm
       - tasty
       - tasty-hunit
-      - tasty-quickcheck
-    other-modules:
-    - TestConnections
-    - TestSqlite_TH
-    - TestDBConn
-    - TestSqlParser
-    - Spec
+      - unliftio-core
     when:
     - condition: flag(ms)
       other-modules: TestMS_TH
@@ -123,12 +126,6 @@ tests:
       other-modules: TestOracle_TH
     - condition: flag(my)
       other-modules: TestMY_TH
-
-    - condition: impl(ghc >= 8.8)
-      ghc-options:
-      - -fwrite-ide-info
-      - -hiedir=.hie
-      - -Widentities
 
 data-files:
 - conn.dhall

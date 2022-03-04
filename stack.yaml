@@ -1,23 +1,20 @@
-resolver: lts-17.0
+resolver: lts-18.10
 packages:
 - '.'
 extra-deps:
-- pretty-terminal-0.1.0.0
-- Frames-0.7.0
-- discrimination-0.4
-- symbols-0.3.0.0
-- smtp-mail-0.3.0.0
+- Frames-0.7.2
+- discrimination-0.4.1
+- ../baseutils
+- ../coreutils
+- ../docutils
 - ../database
-- ../logging-dhall
 - ../logging-simple
 - ../hdbc-odbc2
 - ../table-layout
-- ../typelevel
-- ../predicate-typed
 - ../sqlhandler
 
 # ghc-options: {"$locals": -ddump-to-file -ddump-hi}
 
-ghc-options:
-  "$locals": -fwrite-ide-info
-  "$everything": -haddock
+#ghc-options:
+#  "$locals": -fwrite-ide-info
+#  "$everything": -haddock

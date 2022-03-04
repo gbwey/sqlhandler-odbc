@@ -1,18 +1,19 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RankNTypes #-}
+-- need this if not using a proxy but using only type applications [eg createFrameSql]
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE AllowAmbiguousTypes #-} -- need this if not using a proxy but using only type applications [eg createFrameSql]
-{-# LANGUAGE NoStarIsType #-}
+
 {- |
 Module      : HSql.ODBC.DBFrame
 Description : Convenience methods for reading and writing a frame to a database
@@ -20,83 +21,83 @@ Copyright   : (c) Grant Weyburne, 2016
 License     : BSD-3
 -}
 module HSql.ODBC.DBFrame where
-import Data.Time (UTCTime,ZonedTime,LocalTime,Day)
-import Prelude hiding (FilePath)
-import Text.Shakespeare.Text (st)
-import qualified Data.Text as T
-import Data.Text (Text)
+
 import Control.Monad (forM_)
-import Data.Proxy (Proxy(..))
-import HSql.ODBC.DBConn
-import HSql.Core.Sql
-import HSql.Core.Encoder (DefEnc,Enc)
-import HSql.Core.VinylUtils
+import Data.List.NonEmpty (NonEmpty (..))
+import Data.Proxy (Proxy (..))
+import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Time (Day, LocalTime, UTCTime, ZonedTime)
 import Data.Vinyl
 import qualified Data.Vinyl.Functor as V (Identity)
-import GHC.TypeLits
 import qualified Frames as F
+import GHC.TypeLits
+import HSql.Core
+import HSql.Core.VinylUtils
+import HSql.ODBC.DBConn
 import Logging
+import Text.Shakespeare.Text (st)
+import Utils.Error
+import Utils.Positive
+import Prelude hiding (FilePath)
 
 -- U0 works in Mssql but in postgres it use a random number so have to make it Upd
--- | 'createFrameSql' generates a sql statement to create a table based on the fieldnames and types in the proxy
-createFrameSql :: forall db rs . (ToMetas rs, GConnWrite db)
-  => Table db -> Sql db '[] '[Upd]
-createFrameSql = createDBTableFromSql (toMetas (Proxy @rs))
-{-
->createFrameSql @(DBMS Writeable) @'["aa" ::: Int] "fred"
-create table [fred]
-                (
-                  [aa] bigint not null
-                )
 
-it :: Sql (DBMS Writeable) '[] '[Upd]
--}
+-- | 'createFrameSql' generates a sql statement to create a table based on the fieldnames and types in the proxy
+createFrameSql ::
+  forall db rs.
+  (ToMetas rs, GConnWrite db) =>
+  Table db ->
+  Sql db '[] '[Upd]
+createFrameSql = createDBTableFromSql (fromList1 "createFrameSql" $ toMetas (Proxy @rs))
 
 -- | 'insertFrameSql' generates sql insert statements for the list of vinyl records
-insertFrameSql :: forall db rs t . (DefEnc (Rec Enc (Unlabeled rs)), F.ColumnHeaders rs, GConnWrite db)
-   => Table db -> t (F rs) -> Sql db (Unlabeled rs) '[U1]
+insertFrameSql ::
+  forall db rs t.
+  (DefEnc (Rec Enc (Unlabeled rs)), F.ColumnHeaders rs, GConnWrite db) =>
+  Table db ->
+  t (F rs) ->
+  Sql db (Unlabeled rs) '[U1]
 insertFrameSql tab _ =
   let cnames = F.columnHeaders (Proxy @(F rs))
-      len = length cnames
-      flds = T.intercalate "," $ map (escapeField tab . T.pack) cnames
-      tt = escapeField tab (tName tab)
-  in mkSql [st|insertFrameSql #{tab}|] [st|insert into #{tt} (#{flds}) values#{qqsn len}|]
+   in case cnames of
+        [] -> normalError $ "insertFrameSql: no cnames found tab=" ++ show tab
+        a : as ->
+          let len = lengthPositive (a :| as)
+              flds = T.intercalate "," $ map (escapeField tab . T.pack) cnames
+              tt = escapeField tab (showTName $ tName tab)
+           in mkSql [st|insertFrameSql #{tab}|] [st|insert into #{tt} (#{flds}) values#{qqsn len}|]
 
 -- | 'insertFrameLoad' loads a table with the frame using the names and types from the frame
-insertFrameLoad :: forall db m e rs t
-   . (Foldable t, ML e m, ToMetas rs, DefEnc (Rec Enc (Unlabeled rs)), F.ColumnHeaders rs, RecordToList (Unlabeled rs), ReifyConstraint Show V.Identity (Unlabeled rs), StripFieldNames rs, RMap (Unlabeled rs), GConnWrite db)
-    => CreateTable
-    -> db
-    -> Table db
-    -> t (F rs)
-    -> m ()
+insertFrameLoad ::
+  forall db m e rs t.
+  (Foldable t, ML e m, ToMetas rs, DefEnc (Rec Enc (Unlabeled rs)), F.ColumnHeaders rs, RecordToList (Unlabeled rs), ReifyConstraint Show V.Identity (Unlabeled rs), StripFieldNames rs, RMap (Unlabeled rs), GConnWrite db) =>
+  TableCreate ->
+  db ->
+  Table db ->
+  t (F rs) ->
+  m ()
 insertFrameLoad cre db tab ff = do
   case cre of
-    DropCreateTable -> runSql_ db RNil $ createFrameSql @db @rs tab -- could also drop the table ... but dangerous
-    CreateTable -> runSql_ db RNil $ createFrameSql @db @rs tab
-    SkipCreate -> return ()
+    DropTableCreate -> runSql_ db RNil $ createFrameSql @db @rs tab -- could also drop the table ... but dangerous
+    TableCreate -> runSql_ db RNil $ createFrameSql @db @rs tab
+    SkipTableCreate -> return ()
   let ins = insertFrameSql tab ff
-  withDB db $ \conn ->
+  withDB [st|insertFrameLoad #{ins}|] db $ \conn ->
     forM_ ff $ \row ->
-        runSqlI conn (stripNames row) ins
+      runSqlI conn (stripNames row) ins
 
 -- useful if you want to get rs as the proxy cos nested another layer: Frame -> Record -> Rec ElField rs
+
+-- | extract a proxy for "rs"
 proxyFrameToRs :: p (F rs) -> Proxy rs
---proxyFrameToRs :: Frame (F rs) -> Proxy rs
+-- proxyFrameToRs :: Frame (F rs) -> Proxy rs
 proxyFrameToRs _ = Proxy
-{-
--- tricky cos if we use a Frame then will be a Proxy Record so we need an instance of ToMetas for Record
-type FrameRec rs = Frame (Record rs)
-type Record   rs = FieldRec rs
-type FieldRec rs = Rec ElField rs
 
-Frame (F rs) is the equivalent of FrameRec
--}
+-- | generates metadata information from the names and types in "a"
+class ToMetas (a :: k) where -- can leave out the "k" but must have polykinds
+  toMetas :: p a -> [(ColDataType, ColumnMeta)]
 
--- can use a straight Frame or Proxy @'["aa" :-> Bool, "bb" :-> Double]
--- | 'ToMetas' generates metadata information from the names and types in 'a'
-class ToMetas (a :: k) where -- k means you need polykinds: can leave out the 'k' but must have polykinds
-  toMetas :: p a -> [(ColDataType,ColumnMeta)]
 instance ToMetas '[] where
   toMetas _ = []
 instance (ToMeta t, ToMetas ts) => ToMetas (t ': ts) where
@@ -107,7 +108,8 @@ instance ToMetas ts => ToMetas (F.Record ts) where
 -- | 'ToMeta' generates metadata information from a single column
 class ToMeta a where -- could specify a :: (Symbol,*) but that is too specific: let ghc figure it out with polykinds
 -- tried with a::k but could not get type application to work
-  toMeta :: p a -> (ColDataType,ColumnMeta)
+  toMeta :: p a -> (ColDataType, ColumnMeta)
+
 instance KnownSymbol s => ToMeta '(s, Int) where
   toMeta _ = (CInt, ColumnMeta (T.pack (symbolVal (Proxy @s))) "Int" False 10 Nothing Nothing False False 0)
 instance KnownSymbol s => ToMeta '(s, Integer) where
@@ -131,5 +133,6 @@ instance KnownSymbol s => ToMeta '(s, Day) where
 instance KnownSymbol s => ToMeta '(s, Bool) where
   toMeta _ = (CBool, ColumnMeta (T.pack (symbolVal (Proxy @s))) "Bool" False 10 Nothing Nothing False False 0)
 instance (ToMeta '(s, a)) => ToMeta '(s, Maybe a) where
-  toMeta _ = let (x,y) = toMeta @'(s, a) Proxy
-             in (x, y { cIsNull = True })
+  toMeta _ =
+    let (x, y) = toMeta @'(s, a) Proxy
+     in (x, y{cIsNull = True})

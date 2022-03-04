@@ -1,18 +1,18 @@
 {-# OPTIONS -Wno-orphans #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE NoStarIsType #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ViewPatterns #-}
+
 {- |
 Module      : HSql.ODBC.DBOracle
 Description : Oracle
@@ -22,20 +22,22 @@ License     : BSD-3
 Implementation of GConn for oracle.
 -}
 module HSql.ODBC.DBOracle (
-    module HSql.ODBC.DBOracle
-  , module Database.Oracle
-  ) where
---import Language.Haskell.TH hiding (Dec)
-import Prelude hiding (FilePath)
-import Text.Shakespeare.Text (st)
+  module HSql.ODBC.DBOracle,
+  module Database.Oracle,
+) where
+
 import Control.Arrow ((&&&))
 import Data.Maybe (fromMaybe)
-import HSql.ODBC.GConn
-import HSql.Core.Sql
-import GHC.Stack
-import qualified Language.Haskell.TH.Syntax as TH (runIO,lift)
 import Database.Oracle
+import GHC.Stack
+import HSql.Core.Sql
+import HSql.ODBC.GConn
+import qualified Language.Haskell.TH.Syntax as TH (lift, runIO)
+import Text.Shakespeare.Text (st)
+import Utils.Error
+import Prelude hiding (FilePath)
 
+-- | writeable instance for an oracle database
 type instance WriteableDB (DBOracle Writeable) = 'True
 
 instance GConn (DBOracle a) where
@@ -43,23 +45,32 @@ instance GConn (DBOracle a) where
     c <- TH.runIO $ loadConn @(DBOracle a) k
     TH.lift c
 
--- ;FWC=T;StatementCache=T;
-  getAllTablesSql DBOracle {..} = mkSql "getAllTablesSql Oracle" [st|
+  -- ;FWC=T;StatementCache=T;
+  getAllTablesSql DBOracle{..} =
+    mkSql
+      "getAllTablesSql Oracle"
+      [st|
     select owner || '.' || TABLE_NAME
     from SYS.ALL_TABLES
     where owner='#{orschema}'
     order by TABLE_NAME
   |]
-  getAllViewsSql DBOracle {..} = mkSql "getAllViewsSql Oracle" [st|
+  getAllViewsSql DBOracle{..} =
+    mkSql
+      "getAllViewsSql Oracle"
+      [st|
     select owner || '.' || VIEW_NAME
     from SYS.ALL_VIEWS
     where owner='#{orschema}'
     order by VIEW_NAME
   |]
+
   -- bearbeiten: schema handling
   existsTableSql db t =
     let cl = maybe mempty (\sch -> [st| and owner = '#{sch}'|]) (getEffectiveSchema db t)
-    in mkSql "existsTableSql Oracle" [st|
+     in mkSql
+          "existsTableSql Oracle"
+          [st|
 SELECT case when EXISTS (
     SELECT 1
     from SYS.ALL_TABLES
@@ -68,34 +79,37 @@ SELECT case when EXISTS (
 ) then '#{found}'
 else '#{notfound}' end from dual
 |]
--- unfortunately no such thing as if exists!!! so will have to check separately unless using an extremely new version of oracle
+
+  -- unfortunately no such thing as if exists!!! so will have to check separately unless using an extremely new version of oracle
   dropTableIfExistsSql db table = mkSql "dropTableIfExistsSql Oracle" [st|drop table #{getEffectiveTable db table}|]
   dropViewIfExistsSql db table = mkSql "dropViewIfExistsSql Oracle" [st|drop view #{getEffectiveTable db table}|]
 
   getColumnMetaSql db t = (oracleType, getOracleColumnMetaSql db t)
 
-  translateColumnMeta _ (cd, ColumnMeta {..}) =
-     case cd of
-       CString -> [st|VARCHAR2(#{cLength})|]
-       CFixedString -> [st|CHAR(#{cLength})|]
-       CInt -> "INTEGER"
-       CDateTime -> "TIMESTAMP"
-       CDate -> "DATE"
-       CFloat -> "FLOAT" -- number doesnt translate through odbc driver: ie defaults to bytestring: hopefully some these types work!
-       CBool -> "INTEGER"
-       CBLOB -> "BLOB"
-       CCLOB -> "CLOB"
-       CBinary -> [st|RAW(#{cLength})|]
-       COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to oracle " ++ show o
---  limitSql _ = maybe mempty (\n -> [st|OFFSET 0 ROWS FETCH NEXT #{n} ROWS ONLY|])
-  limitSql _ = maybe mempty (\n -> [st|rownum < #{n}|])  -- older versions but trickier to get right
+  translateColumnMeta _ (cd, ColumnMeta{..}) =
+    case cd of
+      CString -> [st|VARCHAR2(#{cLength})|]
+      CFixedString -> [st|CHAR(#{cLength})|]
+      CInt -> "INTEGER"
+      CDateTime -> "TIMESTAMP"
+      CDate -> "DATE"
+      CFloat -> "FLOAT" -- number doesnt translate through odbc driver: ie defaults to bytestring: hopefully some these types work!
+      CBool -> "INTEGER"
+      CBLOB -> "BLOB"
+      CCLOB -> "CLOB"
+      CBinary -> [st|RAW(#{cLength})|]
+      COther o -> normalError $ "translateColumnMeta: dont know how to convert this columnmeta to oracle " ++ show o
 
+  --  limitSql _ = maybe mempty (\n -> [st|OFFSET 0 ROWS FETCH NEXT #{n} ROWS ONLY|])
+  limitSql _ = maybe mempty (\n -> [st|rownum < #{n}|]) -- older versions but trickier to get right
 
--- bearbeiten spaeter
+-- | sql for getting metadata from an oracle table
 getOracleColumnMetaSql :: HasCallStack => DBOracle a -> Table (DBOracle a) -> Sql (DBOracle a) '[] '[Sel ColumnMeta]
 getOracleColumnMetaSql db t =
-  let sch = fromMaybe (error $ "getOracleColumnMetaSql: missing schema!!" <> show t) (getEffectiveSchema db t)
-  in mkSql "getOracleColumnMetaSql" [st|
+  let sch = fromMaybe (normalError $ "getOracleColumnMetaSql: missing schema!!" <> show t) (getEffectiveSchema db t)
+   in mkSql
+        "getOracleColumnMetaSql"
+        [st|
   select
      t.column_name
    , t.data_type
@@ -120,8 +134,9 @@ getOracleColumnMetaSql db t =
   order by t.table_name, t.column_id
  |]
 
+-- | convert from oracle datatype to 'ColDataType'
 oracleType :: ColumnMeta -> ColDataType
-oracleType (cType &&& cScale -> (ss,mscale))
+oracleType (cType &&& cScale -> (ss, mscale))
   | ss == "NUMERIC" && mscale == Just 0 = CInt
   | ss `elem` ["VARCHAR", "VARCHAR2"] = CString
   | ss `elem` ["CHAR", "CHAR2"] = CFixedString

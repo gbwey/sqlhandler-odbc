@@ -1,0 +1,4 @@
+- ignore: {name: "Use camelCase"}
+- ignore: {name: "Use sortOn"}
+- arguments: [-XNoCPP]
+

@@ -1,0 +1,30 @@
+[[remove]]
+directory = "test/unit\\"
+
+[[remove]]
+directory = "test/integration\\"
+
+# infinite length
+[[check]]
+type = "Exclude"
+id = "STAN-0103"
+scope = "all"
+
+# bytestring pack
+[[check]]
+type = "Exclude"
+id = "STAN-0203"
+scope = "all"
+
+# text length
+[[check]]
+type = "Exclude"
+id = "STAN-0208"
+scope = "all"
+
+# big tuples
+[[check]]
+type = "Exclude"
+id = "STAN-0302"
+scope = "all" 
+

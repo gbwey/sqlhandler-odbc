@@ -1,10 +1,12 @@
 module Spec where
-import qualified TestDBConn
-import qualified TestSqlParser
+
 import Test.Tasty
+import qualified TestDBConn
 
 spec :: IO ()
-spec = defaultMain $ testGroup "alltests"
-  [ TestDBConn.suite
-  , TestSqlParser.suite
-  ]
+spec =
+  defaultMain $
+    testGroup
+      "alltests"
+      [ TestDBConn.suite
+      ]

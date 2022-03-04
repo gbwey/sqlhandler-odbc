@@ -1,24 +1,22 @@
--- using getPGTableCountsSql instead for counts of tables cos no roundtripping needed and is fast!
--- multiple resultsets work great with postgres
 {-# OPTIONS -Wno-orphans #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE NoStarIsType #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ViewPatterns #-}
+
 {- |
 Module      : HSql.ODBC.DBPG
 Description : Postgres
@@ -28,16 +26,19 @@ License     : BSD-3
 Implementation of GConn for postgres.
 -}
 module HSql.ODBC.DBPG where
-import Prelude hiding (FilePath)
-import Text.Shakespeare.Text (st)
+
+import Control.Arrow ((&&&))
 import Data.Text (Text)
 import qualified Data.Text as T
-import HSql.ODBC.GConn
-import HSql.Core.Sql
-import Control.Arrow ((&&&))
-import qualified Language.Haskell.TH.Syntax as TH (lift,runIO)
 import Database.Postgres
+import HSql.Core.Sql
+import HSql.ODBC.GConn
+import qualified Language.Haskell.TH.Syntax as TH (lift, runIO)
+import Text.Shakespeare.Text (st)
+import Utils.Error
+import Prelude hiding (FilePath)
 
+-- | writeable instance for a postgres database
 type instance WriteableDB (DBPG Writeable) = 'True
 
 instance GConn (DBPG a) where
@@ -47,13 +48,19 @@ instance GConn (DBPG a) where
 
   getAllTablesCountSql _ = Just getPGTableCountsSql
 
-  getAllTablesSql db = mkSql "getAllTablesSql PostGres" [st|
+  getAllTablesSql db =
+    mkSql
+      "getAllTablesSql PostGres"
+      [st|
     select schemaname || '.' || tablename
     from pg_catalog.pg_tables
     where schemaname #{pgSchemaDBSql db}
     order by schemaname, tablename
   |]
-  getAllViewsSql db = mkSql "getAllViewsSql PostGres" [st|
+  getAllViewsSql db =
+    mkSql
+      "getAllViewsSql PostGres"
+      [st|
     select schemaname || '.' || viewname
     from pg_catalog.pg_views
     where schemaname #{pgSchemaDBSql db}
@@ -61,7 +68,9 @@ instance GConn (DBPG a) where
   |]
   existsTableSql db t =
     let cl = maybe mempty (\s -> [st|AND n.nspname = '#{s}'|]) (getEffectiveSchema db t)
-    in mkSql "existsTableSql PostGres" [st|
+     in mkSql
+          "existsTableSql PostGres"
+          [st|
 SELECT case when EXISTS (
     SELECT 1
     FROM   pg_catalog.pg_class c
@@ -78,29 +87,30 @@ else '#{notfound}' end
 
   getColumnMetaSql db t = (pgType, getPGColumnMetaSql db t)
 
-  translateColumnMeta _ (cd, ColumnMeta {..}) =
-     case cd of
-       CString -> [st|varchar(#{cLength})|]
-       CFixedString -> [st|char(#{cLength})|]
-       CInt -> "bigint" -- "integer"
-       CDateTime -> "timestamp"
-       CDate -> "date"
-       CFloat -> "numeric"
-       CBool -> "boolean"
-       CBinary -> error "CBinary postgres not defined yet"
-       CBLOB -> "bytea"
-       CCLOB -> "text"
-       COther o -> error $ "translateColumnMeta: dont know how to convert this columnmeta to postgres " ++ show o
+  translateColumnMeta _ (cd, ColumnMeta{..}) =
+    case cd of
+      CString -> [st|varchar(#{cLength})|]
+      CFixedString -> [st|char(#{cLength})|]
+      CInt -> "bigint" -- "integer"
+      CDateTime -> "timestamp"
+      CDate -> "date"
+      CFloat -> "numeric"
+      CBool -> "boolean"
+      CBinary -> normalError "CBinary postgres not defined yet"
+      CBLOB -> "bytea"
+      CCLOB -> "text"
+      COther o -> normalError $ "translateColumnMeta: dont know how to convert this columnmeta to postgres " ++ show o
   limitSql _ = maybe mempty (\n -> [st|limit #{n}|])
 
+-- | convert from postgres datatype to 'ColDataType'
 pgType :: ColumnMeta -> ColDataType
-pgType (T.toLower. cType &&& cScale -> (ss,mscale))
+pgType (T.toLower . cType &&& cScale -> (ss, mscale))
   | ss == "numeric" && mscale == Just 0 = CInt
   | ss `elem` ["varchar", "character varying"] = CString
   | ss `elem` ["char", "bpchar", "character"] = CFixedString
   | ss `elem` ["smallserial", "serial", "bigserial", "smallint", "int", "integer", "bigint", "int4", "int8"] = CInt
   | ss `elem` ["real", "float", "float8", "double", "numeric"] = CFloat
-  | ss `elem` ["bit", "bool","boolean"] = CBool
+  | ss `elem` ["bit", "bool", "boolean"] = CBool
   | ss `elem` ["timestamp", "timestamp without time zone", "timestamp with time zone"] = CDateTime
   | ss == "date" = CDate
   | ss `elem` [] = CBinary
@@ -108,12 +118,15 @@ pgType (T.toLower. cType &&& cScale -> (ss,mscale))
   | ss == "text" = CCLOB
   | otherwise = COther ss
 
+-- | get the database schema from the connection
 pgSchemaDBSql :: DBPG a -> Text
 pgSchemaDBSql = pgSchemaSql' . getSchema
 
+-- | get the effective database schema from the table and connection
 pgSchemaTableSql :: DBPG a -> Table (DBPG a) -> Text
 pgSchemaTableSql db = pgSchemaSql' . getEffectiveSchema db
 
+-- | get schema
 pgSchemaSql' :: Maybe Text -> Text
 pgSchemaSql' =
   \case
@@ -121,8 +134,13 @@ pgSchemaSql' =
     Just sch -> [st| = '#{sch}'|]
 
 -- https://dba.stackexchange.com/questions/90555/postgresql-select-primary-key-as-serial-or-bigserial/90567#90567
+
+-- | sql for getting metadata from a postgres table
 getPGColumnMetaSql :: DBPG a -> Table (DBPG a) -> Sql (DBPG a) '[] '[Sel ColumnMeta]
-getPGColumnMetaSql db t = mkSql "getPGColumnMetaSql" [st|
+getPGColumnMetaSql db t =
+  mkSql
+    "getPGColumnMetaSql"
+    [st|
 SELECT
       tab_columns.column_name
     , udt_name
@@ -177,14 +195,15 @@ and (tab_constraints.table_name is null or tab_constraints.table_name = tab_colu
 ORDER BY ordinal_position
 |]
 
-
---https://stackoverflow.com/questions/769683/show-tables-in-postgresql
+-- https://stackoverflow.com/questions/769683/show-tables-in-postgresql
 -- change out 'public' to the schema you want
--- this takes 20 seconds to run but the next time is really fast
 
 -- | get all tables and associated row counts
 getPGTableCountsSql :: Sql (DBPG a) '[] '[Sel (GetAllTablesCount (DBPG a))]
-getPGTableCountsSql = mkSql "getPGTableCountsSql" [st|
+getPGTableCountsSql =
+  mkSql
+    "getPGTableCountsSql"
+    [st|
 select table_schema || '.' || table_name as table
        ,(xpath('/row/cnt/text()', xml_count))[1]::text::int as row_count
        ,null
@@ -197,4 +216,3 @@ from (
 ) t
 order by table_schema, table_name
  |]
-
