@@ -7,6 +7,7 @@
 
 module TestDBConn where
 
+import Data.Pos
 import Data.Proxy
 import Database.Postgres
 import HSql.ODBC.DBMSSQL
@@ -15,7 +16,6 @@ import HSql.ODBC.DBPG ()
 import HSql.ODBC.GConn
 import Test.Tasty
 import Test.Tasty.HUnit
-import Utils.Positive
 
 suite :: TestTree
 suite =

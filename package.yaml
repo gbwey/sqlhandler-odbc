@@ -33,7 +33,8 @@ dependencies:
 - baseutils
 - conduit
 - containers
-- coreutils
+- pos >= 0.2.0.0
+- primus >= 0.2.0.0
 - database
 - deepseq
 - dhall >= 1.32.0

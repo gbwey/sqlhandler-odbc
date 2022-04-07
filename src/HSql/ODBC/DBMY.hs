@@ -29,8 +29,8 @@ import Database.MySql
 import HSql.Core.Sql
 import HSql.ODBC.GConn
 import qualified Language.Haskell.TH.Syntax as TH (lift, runIO)
+import Primus.Error
 import Text.Shakespeare.Text (st)
-import Utils.Error
 import Prelude hiding (FilePath)
 
 -- | writeable instance for a mysql database

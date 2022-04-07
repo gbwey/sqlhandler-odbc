@@ -36,9 +36,9 @@ import HSql.Core
 import HSql.Core.VinylUtils
 import HSql.ODBC.DBConn
 import Logging
+import Primus.Error
+import Primus.NonEmpty
 import Text.Shakespeare.Text (st)
-import Utils.Error
-import Utils.Positive
 import Prelude hiding (FilePath)
 
 -- U0 works in Mssql but in postgres it use a random number so have to make it Upd
@@ -63,7 +63,7 @@ insertFrameSql tab _ =
    in case cnames of
         [] -> normalError $ "insertFrameSql: no cnames found tab=" ++ show tab
         a : as ->
-          let len = lengthPositive (a :| as)
+          let len = lengthP (a :| as)
               flds = T.intercalate "," $ map (escapeField tab . T.pack) cnames
               tt = escapeField tab (showTName $ tName tab)
            in mkSql [st|insertFrameSql #{tab}|] [st|insert into #{tt} (#{flds}) values#{qqsn len}|]

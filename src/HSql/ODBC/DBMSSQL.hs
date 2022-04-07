@@ -42,8 +42,8 @@ import HSql.Core
 import HSql.Core.VinylUtils
 import HSql.ODBC.GConn
 import qualified Language.Haskell.TH.Syntax as TH (lift, runIO)
+import Primus.Error
 import Text.Shakespeare.Text (ToText (..), st)
-import Utils.Error
 import Prelude hiding (FilePath)
 
 -- | writeable database

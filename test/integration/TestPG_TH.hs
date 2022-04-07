@@ -1,4 +1,3 @@
-{-# OPTIONS -Wno-unused-imports #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
@@ -17,7 +16,6 @@ import HSql.Core.TablePrinter
 import HSql.ODBC.DBConn
 import HSql.ODBC.DBPG ()
 import HSql.ODBC.Sql_TH
-import Logging
 import TestConnections
 import Text.Shakespeare.Text
 

@@ -1,4 +1,3 @@
-{-# OPTIONS -Wno-unused-imports #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
@@ -9,14 +8,11 @@
 
 module TestMS_TH where
 
-import Data.Vinyl
 import HSql.Core.Sql
-import HSql.Core.TablePrinter
 import HSql.ODBC.DBConn
 import HSql.ODBC.DBMSSQL
 import HSql.ODBC.Sql_TH
 import Language.Haskell.TH.Syntax (mkName)
-import Logging
 import TestConnections
 import Text.Shakespeare.Text
 

@@ -5,16 +5,13 @@ extra-deps:
 - Frames-0.7.2
 - discrimination-0.4.1
 - ../baseutils
-- ../coreutils
+- ../pos
+- ../primus
+# - pos-0.2.0.0
+# - primus-0.2.0.0
 - ../docutils
 - ../database
 - ../logging-simple
 - ../hdbc-odbc2
 - ../table-layout
 - ../sqlhandler
-
-# ghc-options: {"$locals": -ddump-to-file -ddump-hi}
-
-#ghc-options:
-#  "$locals": -fwrite-ide-info
-#  "$everything": -haddock

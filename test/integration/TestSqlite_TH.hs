@@ -1,4 +1,3 @@
-{-# OPTIONS -Wno-unused-imports #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
@@ -11,17 +10,12 @@
 
 module TestSqlite_TH where
 
-import Data.Kind (Type)
 import Data.Time
-import Data.Vinyl
 import Database.Sqlite
-import GHC.TypeLits (Nat)
 import HSql.Core.Sql
-import HSql.Core.TablePrinter
 import HSql.ODBC.DBConn
 import HSql.ODBC.DBSqlite ()
 import HSql.ODBC.Sql_TH
-import Logging
 
 {-
 import Predicate

@@ -85,12 +85,12 @@ import HSql.ODBC.GConn
 import qualified Language.Haskell.TH as TH (Name)
 import Logging
 import qualified Prettyprinter as PP
+import Primus.Error
+import qualified Primus.TypeLevel as TP (FailUnless, type (:=>))
 import qualified Replace.Megaparsec as RM
 import qualified Text.Megaparsec as Z
 import Text.Shakespeare.Text
 import qualified UnliftIO.Exception as U
-import Utils.Error
-import qualified Utils.TypeLevel as TP (FailUnless, Impl)
 
 -- | wrapper for a hdbc connection
 newtype HConn a = HConn H.Connection deriving newtype (H.IConnection)
@@ -124,7 +124,7 @@ instance ToText TableCreate where
 type RunSqlOk :: [Type] -> db -> Constraint
 type RunSqlOk b db =
   TP.FailUnless
-    (TP.Impl (Sql.WriteableRS b) (Sql.WriteableDB db))
+    (Sql.WriteableRS b TP.:=> Sql.WriteableDB db)
     ( 'Text "Readonly database does not allow Upd")
 
 -- | a list of constraints for that need to be fulfilled by runSql*

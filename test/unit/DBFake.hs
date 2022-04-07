@@ -19,6 +19,7 @@ import Control.Concurrent.STM
 import Control.Monad.Reader
 import Data.Char
 import qualified Data.Conduit.List as CL
+import Data.Pos
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Lazy.Builder (fromText)
@@ -33,7 +34,6 @@ import qualified Language.Haskell.TH.Syntax as TH
 import Logging
 import Text.Shakespeare.Text
 import qualified UnliftIO.Exception as U
-import Utils.Positive
 
 data DBFake a = DBFake
   { _fRef :: !Ref
@@ -173,7 +173,7 @@ tst4'' cmds =
   tst4generic cmds $ \rdb -> do
     let sc = defSC @3 -- 3 is just the commit interval which we cant track in this
     let pcnt = _P @2
-    let ins r = (mkSql' @'[U1] @'[Raw] [st|insert znork r=#{showP r}|], r *! pcnt)
+    let ins r = (mkSql' @'[U1] @'[Raw] [st|insert znork r=#{show r}|], r *! pcnt)
     C.runConduitRes $
       selectSourceLazyTypedC "tst4''" (mkSql "tst4''" "select stuff" :: Sql db '[Int] '[Sel Raw]) (I1 212) (rdb SS)
         C..| C.mapC unRaw
@@ -211,7 +211,7 @@ tst5 cmds =
   tst4generic cmds $ \rdb -> do
     let sc = (defSC @1){sOneInsert = _P @5}
     let pcnt = _P @2
-    let ins r = (mkSql' @'[U1] @'[Raw] [st|insert znork r=#{showP r}|], r *! pcnt)
+    let ins r = (mkSql' @'[U1] @'[Raw] [st|insert znork r=#{show r}|], r *! pcnt)
     C.runConduitRes $
       selectSourceLazyTypedC "tst5" (mkSql "tst5" "select stuff" :: Sql db '[Int] '[Sel Raw]) (I1 212) (rdb SS)
         C..| C.mapC unRaw
@@ -223,7 +223,7 @@ tst6 cmds =
   tst4generic cmds $ \rdb -> do
     let sc = (defSC @1){sOneInsert = _P @5}
     let pcnt = _P @3
-    let ins r = (mkSql' @'[U1] @'[Raw] [st|insert znork r=#{showP r}|], r *! pcnt)
+    let ins r = (mkSql' @'[U1] @'[Raw] [st|insert znork r=#{show r}|], r *! pcnt)
     C.runConduitRes $
       selectSourceLazyTypedC "tst6" (mkSql "tst6" "select stuff" :: Sql db '[Int] '[Sel Raw]) (I1 212) (rdb SS)
         C..| C.mapC unRaw
@@ -261,7 +261,7 @@ tst6a cmds =
   tst4generic cmds $ \rdb -> do
     let sc = (defSC @1){sOneInsert = _P @5}
     let pcnt = _P @3
-    let ins r = (mkSql "tst4generic" [st|insert znork r=#{showP r}|] :: Sql db '[Raw] '[U1], r *! pcnt)
+    let ins r = (mkSql "tst4generic" [st|insert znork r=#{show r}|] :: Sql db '[Raw] '[U1], r *! pcnt)
     C.runConduitRes $
       selectSourceLazyTypedC "tst6a" (mkSql "tst6a" "select stuff" :: Sql db '[Int] '[Sel Raw]) (I1 212) (rdb SS)
         C..| C.mapC unRaw

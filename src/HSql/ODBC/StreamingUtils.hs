@@ -43,6 +43,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as N
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Pos
 import qualified Data.Sequence as Seq
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -63,84 +64,85 @@ import HSql.ODBC.DBConn
 import Language.Haskell.TH.Syntax (qLocation)
 import Logging
 import Prettyprinter (Doc)
+import Primus.Enum
+import Primus.Error
+import Primus.NonEmpty
 import qualified Safe.Exact as Safe
 import System.IO
 import Text.Shakespeare.Text
 import qualified UnliftIO as U
-import Utils.Error
-import Utils.Positive
 
 -- | total cpus available and suggested using RTS
-data NumCap = NumCap {ncTotal :: !Positive, ncSuggested :: !Positive} deriving stock (Show)
+data NumCap = NumCap {ncTotal :: !Pos, ncSuggested :: !Pos} deriving stock (Show)
 
 -- | load 'NumCap'
 getNumCap :: HasCallStack => IO NumCap
 getNumCap = do
   n <- getNumCapabilities
-  return NumCap{ncTotal = unsafePositive "getNumCap._1" n, ncSuggested = maxPositive _1P (n - 1)}
+  return NumCap{ncTotal = unsafePos "getNumCap._1" n, ncSuggested = maxP _1P (n - 1)}
 
 instance ToText NumCap where
   toText NumCap{..} =
-    fromText [st|NumCap #{showP ncTotal} suggested=#{showP ncSuggested}|]
+    fromText [st|NumCap #{show ncTotal} suggested=#{show ncSuggested}|]
 
 -- | specification for alllocating work over a given number of threads
 data StreamConcurrency = StreamConcurrency
   { sThPool :: !ThreadPool
   -- ^ number of threads
-  , sNumBatches :: !(Maybe Positive)
+  , sNumBatches :: !(Maybe Pos)
   -- ^ divide work into x units: dont need to set this as will default to number of threads above: if you have 5 threads and 30 batches then will divvy up the work to keep filling up the threads
-  , sPcntOrTxnCnt :: !Positive
+  , sPcntOrTxnCnt :: !Pos
   -- ^ width of insert OR number of rows/blocks per txn commit
-  , sOneInsert :: !Positive
+  , sOneInsert :: !Pos
   -- ^ number of rows in a single insert statement -- defaults to 1
   }
   deriving stock (Show, Eq, G.Generic)
 
 instance ToText StreamConcurrency where
   toText StreamConcurrency{..} =
-    fromText [st|SC #{sThPool} batches=#{show sNumBatches} pcnt=#{showP sPcntOrTxnCnt} oneinsert=#{showP sOneInsert}|]
+    fromText [st|SC #{sThPool} batches=#{show sNumBatches} pcnt=#{show sPcntOrTxnCnt} oneinsert=#{show sOneInsert}|]
 
 -- | default settings for 'StreamConcurrency'
-defSC' :: Positive -> StreamConcurrency
+defSC' :: Pos -> StreamConcurrency
 defSC' n = StreamConcurrency threadNormal Nothing n _1P
 
 -- | default settings for 'StreamConcurrency' using type level for 'sPcntOrTxnCnt'
-defSC :: forall n. PositiveC n => StreamConcurrency
+defSC :: forall n. PosT n => StreamConcurrency
 defSC = StreamConcurrency threadNormal Nothing (_P @n) _1P
 
 -- | override the number of threads
-newtype ThreadPool = ThreadPool {thOverride :: Maybe Positive}
+newtype ThreadPool = ThreadPool {thOverride :: Maybe Pos}
   deriving stock (Show, Eq, G.Generic)
 
 instance ToText ThreadPool where
   toText (ThreadPool ov) =
-    fromText $ "pool=" <> maybe "Nothing" (("Just " <>) . T.pack . showP) ov
+    fromText $ "pool=" <> maybe "Nothing" (("Just " <>) . T.pack . show) ov
 
 -- | dont override number of threads
 threadNormal :: ThreadPool
 threadNormal = ThreadPool Nothing
 
 -- | override number of threads
-threadNormalOverride :: Positive -> ThreadPool
+threadNormalOverride :: Pos -> ThreadPool
 threadNormalOverride n = ThreadPool (Just n)
 
 -- | dump number of threads for display
 dumpNumThreads :: ML e m => ThreadPool -> m Text
 dumpNumThreads th = do
   (nc, j) <- liftIO (getNumThreads th)
-  let msg = [st|dumpNumThreads: #{nc} #{showP j}|]
+  let msg = [st|dumpNumThreads: #{nc} #{show j}|]
   $logWarn msg
   return msg
 
 -- | get the number of threads incorporating overrides from the 'ThreadPool' parameter
-getNumThreads :: (HasCallStack, MonadIO m) => ThreadPool -> m (NumCap, Positive)
+getNumThreads :: (HasCallStack, MonadIO m) => ThreadPool -> m (NumCap, Pos)
 getNumThreads (ThreadPool mth) = do
   nc <- liftIO getNumCap
   return (nc, fromMaybe (ncTotal nc) mth)
 
 -- | pads out the input parameters for the sql query input requirements
-paditC :: (Show a, MonadLogger m, MonadIO m) => Positive -> a -> [a] -> m [a]
-paditC (unPositive -> pcnt) defValue sqls = do
+paditC :: (Show a, MonadLogger m, MonadIO m) => Pos -> a -> [a] -> m [a]
+paditC (Pos pcnt) defValue sqls = do
   $logDebug [st|paditC: begin: pcnt=#{pcnt} sqls=#{psi sqls}|]
   let len = length sqls
   case compare pcnt len of
@@ -151,7 +153,7 @@ paditC (unPositive -> pcnt) defValue sqls = do
       return (sqls <> replicate (pcnt - len) defValue)
 
 -- | calculate the effective number of threads for streaming
-getWorkChunks :: MonadIO m => (Maybe Positive, ThreadPool) -> m Positive
+getWorkChunks :: MonadIO m => (Maybe Pos, ThreadPool) -> m Pos
 getWorkChunks (numb, thp) =
   case numb of
     Just x -> return x
@@ -160,7 +162,7 @@ getWorkChunks (numb, thp) =
       return ov
 
 -- | call back holding the current thread id and the return value
-type ThreadedAction m a c = Positive -> a -> m c
+type ThreadedAction m a c = Pos -> a -> m c
 
 -- | same as 'threadedForM' but ignores the output
 threadedForM_ ::
@@ -178,20 +180,20 @@ threadedForM ::
   ThreadPool ->
   NonEmpty a ->
   ThreadedAction m a b ->
-  m (NonEmpty (Positive, b))
+  m (NonEmpty (Pos, b))
 threadedForM th xs act = do
   (NumCap n _, ov) <- liftIO $ getNumThreads th
-  let enz :: forall x. NonEmpty x -> NonEmpty (Positive, x)
-      enz = N.zip enumPositive
-  when (lengthPositive xs < ov) $ $logWarn [st|threadedForM: more threads than tasks!! tasks=#{length xs} threads=#{showP ov}|]
+  let enz :: forall x. NonEmpty x -> NonEmpty (Pos, x)
+      enz = N.zip universe1
+  when (lengthP xs < ov) $ $logWarn [st|threadedForM: more threads than tasks!! tasks=#{length xs} threads=#{show ov}|]
   if ov == _1P
     then
       timeCommand
-        [st|threadedForM UNTHREADED Capabilities=#{showP n} using #{showP ov}|]
+        [st|threadedForM UNTHREADED Capabilities=#{show n} using #{show ov}|]
         (enz <$> mapM (uncurry act) (enz xs))
     else
-      timeCommand [st|threadedForM Capabilities=#{showP n} using #{showP ov} #{show th}|] $
-        U.pooledMapConcurrentlyN (unPositive ov) (\(i, j) -> (i,) <$> act i j) (enz xs)
+      timeCommand [st|threadedForM Capabilities=#{show n} using #{show ov} #{show th}|] $
+        U.pooledMapConcurrentlyN (unP ov) (\(i, j) -> (i,) <$> act i j) (enz xs)
 
 -- | start a transaction within a Resource context
 withTransactionCR ::
@@ -326,7 +328,7 @@ selectSourceLazyALTC txt' sql hs db = do
 
 -- | batch inserts together into a stream of Rights but if there are not enough entries for the letzte one then make them a stream of Lefts (ie single inserts)
 fit1 :: Monad m => StreamConcurrency -> C.ConduitT [a] (Either [a] [a]) m ()
-fit1 StreamConcurrency{sOneInsert = unPositive -> sone} =
+fit1 StreamConcurrency{sOneInsert = Pos sone} =
   let go !i !as = do
         ma <- C.await
         case ma of
@@ -338,8 +340,8 @@ fit1 StreamConcurrency{sOneInsert = unPositive -> sone} =
    in go (0 :: Int) mempty
 
 -- | batch into size of n until you run out then output that last one
-fit2 :: Monad m => Positive -> C.ConduitT a [a] m ()
-fit2 (unPositive -> n) =
+fit2 :: Monad m => Pos -> C.ConduitT a [a] m ()
+fit2 (Pos n) =
   let go !i !as = do
         ma <- C.await
         case ma of
@@ -394,7 +396,7 @@ insertConduitC ::
   (R.MonadResource m, ML e m, GConnWrite db) =>
   Text ->
   StreamConcurrency ->
-  (Positive -> (Sql db a b, Positive)) ->
+  (Pos -> (Sql db a b, Pos)) ->
   db ->
   C.ConduitT (Either [SqlValue] [SqlValue]) Void m Int
 insertConduitC txt' sc isql db = do
@@ -410,9 +412,9 @@ insertConduitC txt' sc isql db = do
     )
     $ do
       $logDebug [st|insertConduitC: sc=#{sc}|]
-      let (irows, unPositive -> itxns) = (sOneInsert &&& sPcntOrTxnCnt) sc
-      let (sqlONE, unPositive -> pcntONE) = first (T.unpack . sSql) $ isql _1P
-      let (sql, unPositive -> pcnt) = first (T.unpack . sSql) $ isql irows
+      let (irows, Pos itxns) = (sOneInsert &&& sPcntOrTxnCnt) sc
+      let (sqlONE, Pos pcntONE) = first (T.unpack . sSql) $ isql _1P
+      let (sql, Pos pcnt) = first (T.unpack . sSql) $ isql irows
       (_, ()) <- withTransactionCR txt c
       (_, stmtONE) <- bracketStmtCR txt c sqlONE
       (_, stmt) <- bracketStmtCR txt c sql
@@ -430,8 +432,8 @@ insertConduitC txt' sc isql db = do
                 if len == pcnt
                   then do
                     if len == pcntONE
-                      then when (k `mod` 100 == 0) $ $logDebug [st|#{txt} inserting bulk (SINGLE ONLY) #{showP irows} pcnt=#{pcnt} pcntONE=#{pcntONE} len=#{len} i=#{i} j=#{j} k=#{k}|] --  hs=#{psi hs}
-                      else $logDebug [st|#{txt} inserting bulk #{showP irows} pcnt=#{pcnt} pcntONE=#{pcntONE} len=#{len} i=#{i} j=#{j} k=#{k}|] --  hs=#{psi hs}
+                      then when (k `mod` 100 == 0) $ $logDebug [st|#{txt} inserting bulk (SINGLE ONLY) #{show irows} pcnt=#{pcnt} pcntONE=#{pcntONE} len=#{len} i=#{i} j=#{j} k=#{k}|] --  hs=#{psi hs}
+                      else $logDebug [st|#{txt} inserting bulk #{show irows} pcnt=#{pcnt} pcntONE=#{pcntONE} len=#{len} i=#{i} j=#{j} k=#{k}|] --  hs=#{psi hs}
                     mrc <- C.catchC (liftIO $ H.execute stmt hs) $
                       \(e :: H.SqlError) -> do
                         werrLS [st|Exception thrown: #{txt} e=#{psi e} after insert sql=[#{sql}] hs=#{psi hs}|]
@@ -450,7 +452,7 @@ insertConduitC txt' sc isql db = do
 
                         ME.whenJustM (liftIO $ H.nextResultSet stmt) $
                           \nrc -> U.throwIO $ GBException [st|#{txt} we got another resultset in insertConduit bulk: how does that happen nrc=#{psi nrc}|]
-                        go (i' :: Int) (j + 1) (k + unPositive irows)
+                        go (i' :: Int) (j + 1) (k + unP irows)
                   else U.throwIO $ GBException [st|#{txt}: pcnt: wrong number of params:expected pcnt=#{pcnt} found #{len} (zero is also invalid) hs=#{psi hs}|]
               Just (Left hs) -> do
                 let len = length hs
@@ -545,7 +547,7 @@ insertConduitWithStatementsC doit fn txt' db = do
 selectConduitStrictC ::
   (ML e m, R.MonadResource m, GConn db) =>
   Text ->
-  (Sql db a b, Positive) ->
+  (Sql db a b, Pos) ->
   db ->
   C.ConduitT [SqlValue] [[SqlValue]] m ()
 selectConduitStrictC txt z db = selectConduitStrictC' (\_ (_, xxs) -> xxs) txt z db C..| C.concatC -- horizontal flattens the stream by stretching them out
@@ -555,7 +557,7 @@ selectConduitStrictC' ::
   (R.MonadResource m, Show ret, ML e m, GConn db) =>
   ([SqlValue] -> (RMeta, [[SqlValue]]) -> ret) ->
   Text ->
-  (Sql db a b, Positive) ->
+  (Sql db a b, Pos) ->
   db ->
   C.ConduitT [SqlValue] [ret] m ()
 selectConduitStrictC' callback txt' (sql, pcnt) db = do
@@ -735,11 +737,11 @@ getDBInsertSqlStream ::
   GConnWrite tgt =>
   NonEmpty (ColDataType, ColumnMeta) ->
   Table tgt ->
-  Positive ->
-  (Sql tgt '[] '[Upd], Positive)
+  Pos ->
+  (Sql tgt '[] '[Upd], Pos)
 getDBInsertSqlStream metas tgttable =
   let xs = N.map (escapeField tgttable . cName . snd) metas
-      c = lengthPositive metas
+      c = lengthP metas
    in \r -> (mkSql "getDBInsertSqlStream" [st|insert into #{tgttable} #{vvs xs} values#{qqrc (r,c)}|], r *! c)
 
 -- | convert the sql value to a more specific type based on the meta data

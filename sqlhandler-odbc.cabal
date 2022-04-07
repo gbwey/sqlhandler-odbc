@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 380160b2934a4c88de237dfabc5aeee50fd4c5c34f2827e2275f21816b0f5e0d
+-- hash: 0d027ee19a3acbead6526425cf170e06060697184ddab7e0a6eae877c3906f8c
 
 name:           sqlhandler-odbc
 version:        0.1.0.0
@@ -84,7 +84,6 @@ library
     , bytestring
     , conduit
     , containers
-    , coreutils
     , database
     , deepseq
     , dhall >=1.32.0
@@ -99,8 +98,10 @@ library
     , megaparsec
     , monad-logger
     , mtl
+    , pos >=0.2.0.0
     , pretty-simple
     , prettyprinter
+    , primus >=0.2.0.0
     , replace-megaparsec
     , resourcet
     , safe
@@ -139,7 +140,6 @@ test-suite spec
     , bytestring
     , conduit
     , containers
-    , coreutils
     , database
     , deepseq
     , dhall >=1.32.0
@@ -155,8 +155,10 @@ test-suite spec
     , megaparsec
     , monad-logger
     , mtl
+    , pos >=0.2.0.0
     , pretty-simple
     , prettyprinter
+    , primus >=0.2.0.0
     , replace-megaparsec
     , resourcet
     , safe

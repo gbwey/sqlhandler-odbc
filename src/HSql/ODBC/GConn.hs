@@ -40,6 +40,7 @@ import Data.Generics.Product
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as N
 import Data.Maybe
+import Data.Pos
 import Data.Proxy
 import Data.Semigroup.Foldable (intercalate1)
 import Data.String
@@ -63,9 +64,9 @@ import HSql.Core
 import HSql.Core.TablePrinter (FromCell (..))
 import HSql.Core.VinylUtils
 import qualified Language.Haskell.TH as TH (Exp, Q)
+import Primus.Error
+import Primus.NonEmpty
 import Text.Shakespeare.Text
-import Utils.Error
-import Utils.Positive
 import Prelude hiding (FilePath)
 
 -- | load dhall connection configuration using the key
@@ -124,7 +125,7 @@ getTempTableName t = do
 parseTableLR :: forall a. (HasCallStack, GConn a) => String -> Either String (Table a)
 parseTableLR ss =
   case tableParser (getDelims (Proxy @a)) (T.pack ss) of
-    Left e -> Left $ "parseTableLR: failed to parse[" ++ ss ++ "] e=" ++ T.unpack e
+    Left e -> Left $ "parseTableLR: failed to parse[" ++ ss ++ "] e=" ++ e
     Right (TNames ma mb c) -> Right $ Table ma (maybe ConnSchema (Schema . Just) mb) c True
 
 instance ToText (Table a) where
@@ -321,11 +322,11 @@ insertTableSqlAuto :: GConn db => Sql db a b -> VE (ISql db a '[Upd])
 insertTableSqlAuto s =
   parseCreateTableSql s
     <&> \(tab, cols) rows ->
-      let (x, i) = insertTableSqlPrivate (rows, lengthPositive cols) tab
+      let (x, i) = insertTableSqlPrivate (rows, lengthP cols) tab
        in (Sql (sDescription s) (sEncoders s) (E1 UpdP) x, i)
 
 -- | create a multi-insert statement with placeholders for the number of columns and rows
-insertTableSqlPrivate :: (Positive, Positive) -> Table db -> (Text, Positive)
+insertTableSqlPrivate :: (Pos, Pos) -> Table db -> (Text, Pos)
 insertTableSqlPrivate (r, c) tab =
   ([st|insert into #{tab} values #{qqrc (r,c)}|], r *! c)
 
@@ -338,11 +339,11 @@ insertTableSqlNamedAuto :: GConn db => Sql db a b -> VE (ISql db a '[Upd])
 insertTableSqlNamedAuto s =
   parseCreateTableSql s
     <&> \(tab, cols) rows ->
-      let (x, i) = insertTableSqlNamedPrivate (rows, lengthPositive cols, intercalate1 "," cols) tab
+      let (x, i) = insertTableSqlNamedPrivate (rows, lengthP cols, intercalate1 "," cols) tab
        in (Sql (sDescription s) (sEncoders s) (E1 UpdP) x, i)
 
 -- | create a multi-insert statement with placeholders for the number of columns and rows
-insertTableSqlNamedPrivate :: (Positive, Positive, Text) -> Table db -> (Text, Positive)
+insertTableSqlNamedPrivate :: (Pos, Pos, Text) -> Table db -> (Text, Pos)
 insertTableSqlNamedPrivate (r, c, colsText) tab =
   ([st|insert into #{tab} (#{colsText}) values #{qqrc (r,c)}|], r *! c)
 

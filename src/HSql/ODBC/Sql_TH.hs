@@ -43,9 +43,9 @@ import qualified Language.Haskell.TH as TH (Name, Type)
 import qualified Language.Haskell.TH.Syntax as TS
 import Language.Haskell.TH.Syntax.Compat (Splice, liftSplice)
 import Logging
+import Primus.Error
 import Text.Shakespeare.Text (st)
 import qualified UnliftIO.Exception as U (throwIO)
-import Utils.Error
 
 -- | options for customizing the generated Sql functions
 data GenOpts = GenOpts
