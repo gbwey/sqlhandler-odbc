@@ -107,7 +107,7 @@ defSC' :: Pos -> StreamConcurrency
 defSC' n = StreamConcurrency threadNormal Nothing n _1P
 
 -- | default settings for 'StreamConcurrency' using type level for 'sPcntOrTxnCnt'
-defSC :: forall n. PosT n => StreamConcurrency
+defSC :: forall n. PosC n => StreamConcurrency
 defSC = StreamConcurrency threadNormal Nothing (_P @n) _1P
 
 -- | override the number of threads

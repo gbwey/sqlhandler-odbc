@@ -7,8 +7,8 @@ extra-deps:
 - ../baseutils
 - ../pos
 - ../primus
-# - pos-0.2.0.0
-# - primus-0.2.0.0
+# - pos-0.3.0.0
+# - primus-0.3.0.0
 - ../docutils
 - ../database
 - ../logging-simple
