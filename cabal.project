@@ -1,4 +1,4 @@
-packages: *.cabal ../{database,logging-simple,table-layout,hdbc-odbc2,baseutils,pos,primus,docutils,sqlhandler}
--- packages: *.cabal ../{database,logging-simple,table-layout,hdbc-odbc2,baseutils,docutils,sqlhandler}
+packages: *.cabal ../{baseutils,database,logging-simple,table-layout,hdbc-odbc2,pos,primus,docutils,sqlhandler}
+-- packages: *.cabal ../{baseutils,database,logging-simple,table-layout,hdbc-odbc2,docutils,sqlhandler}
 
 tests: True
